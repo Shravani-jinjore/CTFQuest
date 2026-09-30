@@ -10,4 +10,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'CTFQuest backend is running' });
 });
 
+app.get('/api/hello/:name', (req, res) => {
+  res.json({ greeting: `Hello, ${req.params.name}!` });
+});
 module.exports = app;
