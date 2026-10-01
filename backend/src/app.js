@@ -1,3 +1,4 @@
+const pool = require('./db');
 const express = require('express');
 const cors = require('cors');
 
@@ -12,5 +13,9 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/hello/:name', (req, res) => {
   res.json({ greeting: `Hello, ${req.params.name}!` });
+});
+app.get('/api/categories', async (req, res) => {
+  const [rows] = await pool.query('SELECT id, name FROM categories');
+  res.json(rows);
 });
 module.exports = app;
