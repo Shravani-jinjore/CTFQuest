@@ -1,4 +1,5 @@
 const express = require('express');
+const requireAuth = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const pool = require('../db');
@@ -60,5 +61,12 @@ router.post('/login', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'server error' });
   }
+});
+router.get('/me', requireAuth, async (req, res) => {
+  const [rows] = await pool.query(
+    'SELECT id, username, email, role, xp FROM users WHERE id = ?',
+    [req.user.id]
+  );
+  res.json(rows[0]);
 });
 module.exports = router;
