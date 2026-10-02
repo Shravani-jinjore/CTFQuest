@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const pool = require('../db');
+const { startChallenge, stopChallenge, TIMEOUT_MS } = require('../challengeManager');
 const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
@@ -73,7 +74,7 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
       return res.json({ correct: false, message: 'Wrong flag. Keep trying!' });
     }
 
-    // NEW: each hint used reduces the reward by 10%
+    // Each hint used reduces the reward by 10%
     const [usedRows] = await conn.query(
       'SELECT COUNT(*) AS n FROM hint_usage WHERE user_id = ? AND challenge_id = ?',
       [userId, challengeId]
@@ -149,6 +150,37 @@ router.get('/:id/hints', requireAuth, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'server error' });
+  }
+});
+
+router.post('/:id/start', requireAuth, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT docker_image FROM challenges WHERE id = ?',
+      [req.params.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'challenge not found' });
+    }
+    if (!rows[0].docker_image) {
+      return res.status(400).json({ error: 'this challenge has no environment' });
+    }
+
+    await startChallenge(req.user.id, req.params.id, rows[0].docker_image);
+    res.json({ status: 'running', expires_in_minutes: TIMEOUT_MS / 60000 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'could not start challenge' });
+  }
+});
+
+router.post('/:id/stop', requireAuth, async (req, res) => {
+  try {
+    await stopChallenge(req.user.id, req.params.id);
+    res.json({ status: 'stopped' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'could not stop challenge' });
   }
 });
 
