@@ -61,4 +61,11 @@ async function cleanupAll() {
   return list.length;
 }
 
-module.exports = { startChallenge, stopChallenge, cleanupAll, TIMEOUT_MS };
+module.exports = {
+  startChallenge,
+  stopChallenge,
+  cleanupAll,
+  TIMEOUT_MS,
+  docker,
+  containerName,
+};
