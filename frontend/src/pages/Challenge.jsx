@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import TerminalView from './TerminalView';
 
 const API_URL = 'http://localhost:5000';
 
@@ -11,6 +12,8 @@ function Challenge() {
   const [error, setError] = useState('');
   const [hints, setHints] = useState([]);
   const [hintMessage, setHintMessage] = useState('');
+  const [running, setRunning] = useState(false);
+  const [envMessage, setEnvMessage] = useState('');
 
   useEffect(() => {
     fetch(`${API_URL}/api/challenges/${id}`)
@@ -33,6 +36,40 @@ function Challenge() {
       .then((data) => setHints(data))
       .catch(() => {});
   }, [id]);
+
+  async function callEnv(action) {
+    setEnvMessage('');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setEnvMessage('Please log in first.');
+      return false;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/challenges/${id}/${action}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setEnvMessage(`Error: ${data.error}`);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      setEnvMessage('Could not reach the server.');
+      return false;
+    }
+  }
+
+  async function handleStart() {
+    setRunning(false);
+    if (await callEnv('start')) setRunning(true);
+  }
+
+  async function handleStop() {
+    setRunning(false);
+    await callEnv('stop');
+  }
 
   async function handleStuck() {
     setHintMessage('');
@@ -102,6 +139,13 @@ function Challenge() {
       <p>{challenge.difficulty} | {challenge.xp_reward} XP</p>
       <p>{challenge.description}</p>
 
+      <h3>Environment</h3>
+      <button onClick={handleStart}>{running ? 'Restart' : 'Start challenge'}</button>{' '}
+      {running && <button onClick={handleStop}>Stop</button>}
+      <p>{envMessage}</p>
+      {running && <TerminalView key={Date.now()} challengeId={id} />}
+
+      <h3>Submit your flag</h3>
       <form onSubmit={handleSubmit}>
         <input
           placeholder="CTFQUEST{...}"
