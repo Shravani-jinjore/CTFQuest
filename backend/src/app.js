@@ -1,6 +1,7 @@
 const pool = require('./db');
 const authRoutes = require('./routes/auth');
 const learningRoutes = require('./routes/learning');
+const challengeRoutes = require('./routes/challenges');
 const express = require('express');
 const cors = require('cors');
 
@@ -10,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', learningRoutes);
+app.use('/api/challenges', challengeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'CTFQuest backend is running' });
