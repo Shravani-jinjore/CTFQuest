@@ -52,3 +52,14 @@ CREATE TABLE IF NOT EXISTS lessons (
   UNIQUE (topic_id, title),
   FOREIGN KEY (topic_id) REFERENCES topics(id)
 );
+
+CREATE TABLE IF NOT EXISTS completions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  challenge_id INT NOT NULL,
+  xp_awarded INT NOT NULL,
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, challenge_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+);

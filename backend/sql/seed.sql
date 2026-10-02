@@ -15,3 +15,11 @@ INSERT IGNORE INTO lessons (topic_id, title, content, position)
 SELECT id, 'Reading files with cat',
 'cat prints a file to the screen. Example: cat notes.txt. For long files, less lets you scroll, and you press q to quit.', 3
 FROM topics WHERE title = 'Files and Folders';
+
+INSERT INTO challenges (category_id, title, description, difficulty, xp_reward, flag_hash)
+SELECT id,
+  'Hidden File',
+  'A file with a secret is hiding in your home directory. Normal ls will not show it. Find it, read it, and submit the flag.',
+  'easy', 50, SHA2('CTFQUEST{h1dd3n_f1l3_f0und}', 256)
+FROM categories WHERE name = 'Linux'
+AND NOT EXISTS (SELECT 1 FROM challenges WHERE title = 'Hidden File');
