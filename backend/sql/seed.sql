@@ -23,3 +23,17 @@ SELECT id,
   'easy', 50, SHA2('CTFQUEST{h1dd3n_f1l3_f0und}', 256)
 FROM categories WHERE name = 'Linux'
 AND NOT EXISTS (SELECT 1 FROM challenges WHERE title = 'Hidden File');
+INSERT IGNORE INTO hints (challenge_id, level, content)
+SELECT id, 1, 'In Linux, a file whose name starts with a dot is hidden from a normal ls.' FROM challenges WHERE title = 'Hidden File';
+
+INSERT IGNORE INTO hints (challenge_id, level, content)
+SELECT id, 2, 'The secret lives in your home directory. Look there, and look for names that start with a dot.' FROM challenges WHERE title = 'Hidden File';
+
+INSERT IGNORE INTO hints (challenge_id, level, content)
+SELECT id, 3, 'ls has an option that shows all files, including hidden ones. It is a single letter: a.' FROM challenges WHERE title = 'Hidden File';
+
+INSERT IGNORE INTO hints (challenge_id, level, content)
+SELECT id, 4, 'After ls -a you will see extra names beginning with a dot, such as .bashrc. The odd one out that is not a normal config file is your target. Read it with cat.' FROM challenges WHERE title = 'Hidden File';
+
+INSERT IGNORE INTO hints (challenge_id, level, content)
+SELECT id, 5, 'Run: ls -a to list everything, find the hidden secret file, then run: cat .<filename> and submit the text it prints as the flag.' FROM challenges WHERE title = 'Hidden File';

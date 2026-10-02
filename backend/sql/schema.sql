@@ -63,3 +63,23 @@ CREATE TABLE IF NOT EXISTS completions (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (challenge_id) REFERENCES challenges(id)
 );
+
+CREATE TABLE IF NOT EXISTS hints (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  challenge_id INT NOT NULL,
+  level TINYINT NOT NULL,
+  content TEXT NOT NULL,
+  UNIQUE (challenge_id, level),
+  FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+);
+
+CREATE TABLE IF NOT EXISTS hint_usage (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  challenge_id INT NOT NULL,
+  level TINYINT NOT NULL,
+  used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, challenge_id, level),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (challenge_id) REFERENCES challenges(id)
+);
