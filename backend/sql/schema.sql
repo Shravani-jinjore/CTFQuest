@@ -83,3 +83,19 @@ CREATE TABLE IF NOT EXISTS hint_usage (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (challenge_id) REFERENCES challenges(id)
 );
+CREATE TABLE IF NOT EXISTS badges (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(30) NOT NULL UNIQUE,
+  name VARCHAR(50) NOT NULL,
+  description VARCHAR(200) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS user_badges (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  badge_id INT NOT NULL,
+  awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, badge_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (badge_id) REFERENCES badges(id)
+);

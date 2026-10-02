@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../db');
 const { startChallenge, stopChallenge, TIMEOUT_MS } = require('../challengeManager');
+const { awardBadges } = require('../gamification');
 const requireAuth = require('../middleware/auth');
 
 const router = express.Router();
@@ -87,10 +88,27 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
       'INSERT INTO completions (user_id, challenge_id, xp_awarded) VALUES (?, ?, ?)',
       [userId, challengeId, xpAwarded]
     );
-    await conn.query('UPDATE users SET xp = xp + ? WHERE id = ?', [xpAwarded, userId]);
+    await conn.query(
+      `UPDATE users SET
+         xp = xp + ?,
+         streak_days = CASE
+           WHEN last_active = CURDATE() THEN streak_days
+           WHEN last_active = CURDATE() - INTERVAL 1 DAY THEN streak_days + 1
+           ELSE 1
+         END,
+         last_active = CURDATE()
+       WHERE id = ?`,
+      [xpAwarded, userId]
+    );
+    const badgesEarned = await awardBadges(conn, userId, hintsUsed);
     await conn.commit();
 
-    res.json({ correct: true, xp_awarded: xpAwarded, hints_used: hintsUsed });
+    res.json({
+      correct: true,
+      xp_awarded: xpAwarded,
+      hints_used: hintsUsed,
+      badges_earned: badgesEarned,
+    });
   } catch (err) {
     await conn.rollback();
     if (err.code === 'ER_DUP_ENTRY') {

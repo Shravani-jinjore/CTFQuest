@@ -65,7 +65,9 @@ router.post('/login', async (req, res) => {
 });
 router.get('/me', requireAuth, async (req, res) => {
   const [rows] = await pool.query(
-    'SELECT id, username, email, role, xp FROM users WHERE id = ?',
+    `SELECT id, username, email, role, xp,
+   CASE WHEN last_active >= CURDATE() - INTERVAL 1 DAY THEN streak_days ELSE 0 END AS streak_days
+ FROM users WHERE id = ?`,
     [req.user.id]
   );
  res.json({ ...rows[0], ...levelInfo(rows[0].xp) });

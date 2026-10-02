@@ -37,3 +37,7 @@ SELECT id, 4, 'After ls -a you will see extra names beginning with a dot, such a
 
 INSERT IGNORE INTO hints (challenge_id, level, content)
 SELECT id, 5, 'Run: ls -a to list everything, find the hidden secret file, then run: cat .<filename> and submit the text it prints as the flag.' FROM challenges WHERE title = 'Hidden File';
+INSERT IGNORE INTO badges (code, name, description) VALUES
+('first_solve', 'First Solve', 'Solve your first challenge'),
+('no_hints', 'No Hints', 'Solve a challenge without using any hint'),
+('streak_3', '3-Day Streak', 'Solve challenges 3 days in a row');

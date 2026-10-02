@@ -120,7 +120,10 @@ function Challenge() {
       if (!response.ok) {
         setMessage(`Error: ${data.error}`);
       } else if (data.correct) {
-        setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).`);
+        const badgeText = data.badges_earned.length
+  ? ` New badge: ${data.badges_earned.join(', ')}!`
+  : '';
+setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).${badgeText}`);
       } else {
         setMessage(data.message);
       }
