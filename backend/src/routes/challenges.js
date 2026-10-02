@@ -73,18 +73,23 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
       return res.json({ correct: false, message: 'Wrong flag. Keep trying!' });
     }
 
+    // NEW: each hint used reduces the reward by 10%
+    const [usedRows] = await conn.query(
+      'SELECT COUNT(*) AS n FROM hint_usage WHERE user_id = ? AND challenge_id = ?',
+      [userId, challengeId]
+    );
+    const hintsUsed = usedRows[0].n;
+    const xpAwarded = Math.floor((challenge.xp_reward * (10 - hintsUsed)) / 10);
+
     await conn.beginTransaction();
     await conn.query(
       'INSERT INTO completions (user_id, challenge_id, xp_awarded) VALUES (?, ?, ?)',
-      [userId, challengeId, challenge.xp_reward]
+      [userId, challengeId, xpAwarded]
     );
-    await conn.query('UPDATE users SET xp = xp + ? WHERE id = ?', [
-      challenge.xp_reward,
-      userId,
-    ]);
+    await conn.query('UPDATE users SET xp = xp + ? WHERE id = ?', [xpAwarded, userId]);
     await conn.commit();
 
-    res.json({ correct: true, xp_awarded: challenge.xp_reward });
+    res.json({ correct: true, xp_awarded: xpAwarded, hints_used: hintsUsed });
   } catch (err) {
     await conn.rollback();
     if (err.code === 'ER_DUP_ENTRY') {
@@ -96,6 +101,7 @@ router.post('/:id/submit', requireAuth, async (req, res) => {
     conn.release();
   }
 });
+
 router.post('/:id/hints/next', requireAuth, async (req, res) => {
   const userId = req.user.id;
   const challengeId = req.params.id;

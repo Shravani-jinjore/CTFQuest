@@ -9,6 +9,8 @@ function Challenge() {
   const [flag, setFlag] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [hints, setHints] = useState([]);
+  const [hintMessage, setHintMessage] = useState('');
 
   useEffect(() => {
     fetch(`${API_URL}/api/challenges/${id}`)
@@ -19,6 +21,43 @@ function Challenge() {
       .then((data) => setChallenge(data))
       .catch(() => setError('Challenge not found.'));
   }, [id]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetch(`${API_URL}/api/challenges/${id}/hints`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setHints(data))
+      .catch(() => {});
+  }, [id]);
+
+  async function handleStuck() {
+    setHintMessage('');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setHintMessage('Please log in to use hints.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/challenges/${id}/hints/next`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setHints((current) => [...current, data]);
+      } else {
+        setHintMessage(data.error === 'no more hints' ? 'No more hints.' : `Error: ${data.error}`);
+      }
+    } catch (err) {
+      setHintMessage('Could not reach the server.');
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -44,7 +83,7 @@ function Challenge() {
       if (!response.ok) {
         setMessage(`Error: ${data.error}`);
       } else if (data.correct) {
-        setMessage(`Correct! You earned ${data.xp_awarded} XP.`);
+        setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).`);
       } else {
         setMessage(data.message);
       }
@@ -72,6 +111,18 @@ function Challenge() {
         <button type="submit">Submit flag</button>
         <p>{message}</p>
       </form>
+
+      <h3>Stuck?</h3>
+      <p>Each hint you use reduces the XP reward by 10%.</p>
+      <button onClick={handleStuck}>I'm stuck</button>
+      <p>{hintMessage}</p>
+      <ol>
+        {hints.map((h) => (
+          <li key={h.level}>
+            <strong>Hint {h.level}:</strong> {h.content}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
