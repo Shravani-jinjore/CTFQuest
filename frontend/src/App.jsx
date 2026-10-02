@@ -9,6 +9,7 @@ import Lesson from './pages/Lesson';
 import Challenges from './pages/Challenges';
 import Challenge from './pages/Challenge';
 import Leaderboard from './pages/Leaderboard';
+import Admin from './pages/Admin';
 
 const API_URL = 'http://localhost:5000';
 
@@ -55,6 +56,7 @@ function App() {
             <Link to="/learn">Learn</Link>
             <Link to="/challenges">Challenges</Link>
             <Link to="/leaderboard">Leaderboard</Link>
+            {user.role === 'admin' && <Link to="/admin">Admin</Link>}
             <button onClick={handleLogout}>Log out</button>
           </>
         ) : (
@@ -81,6 +83,10 @@ function App() {
         <Route path="/challenges" element={<Challenges />} />
         <Route path="/challenges/:id" element={<Challenge />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route
+  path="/admin"
+  element={user && user.role === 'admin' ? <Admin /> : <Navigate to="/dashboard" />}
+/>
         <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
       </Routes>
     </div>
