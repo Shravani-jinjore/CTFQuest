@@ -2,12 +2,14 @@ const pool = require('./db');
 const authRoutes = require('./routes/auth');
 const learningRoutes = require('./routes/learning');
 const challengeRoutes = require('./routes/challenges');
+const leaderboardRoutes = require('./routes/leaderboard');
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
 
 app.use(cors());
+app.use('/api/leaderboard', leaderboardRoutes);
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api', learningRoutes);

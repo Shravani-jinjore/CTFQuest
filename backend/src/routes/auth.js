@@ -1,3 +1,4 @@
+const { levelInfo } = require('../gamification');
 const express = require('express');
 const requireAuth = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
@@ -67,6 +68,6 @@ router.get('/me', requireAuth, async (req, res) => {
     'SELECT id, username, email, role, xp FROM users WHERE id = ?',
     [req.user.id]
   );
-  res.json(rows[0]);
+ res.json({ ...rows[0], ...levelInfo(rows[0].xp) });
 });
 module.exports = router;
