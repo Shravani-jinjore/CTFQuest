@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:5000';
 
-function Login() {
+function Login({ setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -26,39 +27,16 @@ function Login() {
       }
 
       localStorage.setItem('token', data.token);
-      await loadProfile();
+
+      const meResponse = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${data.token}` },
+      });
+      const me = await meResponse.json();
+      setUser(me);
+      navigate('/dashboard');
     } catch (err) {
       setMessage('Could not reach the server. Is the backend running?');
     }
-  }
-
-  async function loadProfile() {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await response.json();
-
-    if (response.ok) {
-      setUser(data);
-    } else {
-      setMessage(`Error: ${data.error}`);
-    }
-  }
-
-  function handleLogout() {
-    localStorage.removeItem('token');
-    setUser(null);
-  }
-
-  if (user) {
-    return (
-      <div>
-        <h2>Welcome, {user.username}!</h2>
-        <p>Role: {user.role} | XP: {user.xp}</p>
-        <button onClick={handleLogout}>Log out</button>
-      </div>
-    );
   }
 
   return (
