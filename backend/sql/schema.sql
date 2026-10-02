@@ -33,3 +33,22 @@ CREATE TABLE IF NOT EXISTS attempts (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (challenge_id) REFERENCES challenges(id)
 );
+
+CREATE TABLE IF NOT EXISTS topics (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  category_id INT NOT NULL,
+  title VARCHAR(100) NOT NULL,
+  position INT NOT NULL,
+  UNIQUE (category_id, title),
+  FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+CREATE TABLE IF NOT EXISTS lessons (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  topic_id INT NOT NULL,
+  title VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,
+  position INT NOT NULL,
+  UNIQUE (topic_id, title),
+  FOREIGN KEY (topic_id) REFERENCES topics(id)
+);
