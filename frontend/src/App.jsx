@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import Categories from './pages/Categories';
 import Topics from './pages/Topics';
 import Lesson from './pages/Lesson';
+import Challenges from './pages/Challenges';
+import Challenge from './pages/Challenge';
 
 const API_URL = 'http://localhost:5000';
 
@@ -50,6 +52,7 @@ function App() {
           <>
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/learn">Learn</Link>
+            <Link to="/challenges">Challenges</Link>
             <button onClick={handleLogout}>Log out</button>
           </>
         ) : (
@@ -57,6 +60,7 @@ function App() {
             <Link to="/login">Login</Link>
             <Link to="/register">Register</Link>
             <Link to="/learn">Learn</Link>
+            <Link to="/challenges">Challenges</Link>
           </>
         )}
       </nav>
@@ -71,6 +75,8 @@ function App() {
         <Route path="/learn" element={<Categories />} />
         <Route path="/learn/category/:id" element={<Topics />} />
         <Route path="/learn/lesson/:id" element={<Lesson />} />
+        <Route path="/challenges" element={<Challenges />} />
+        <Route path="/challenges/:id" element={<Challenge />} />
         <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
       </Routes>
     </div>
