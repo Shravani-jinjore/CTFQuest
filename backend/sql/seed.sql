@@ -1,3 +1,4 @@
+INSERT IGNORE INTO categories (name) VALUES ('Linux'), ('Git'), ('Docker');
 INSERT IGNORE INTO topics (category_id, title, position)
 SELECT id, 'Files and Folders', 1 FROM categories WHERE name = 'Linux';
 
