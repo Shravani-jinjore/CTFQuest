@@ -1,0 +1,158 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CTFQuest API",
+    "version": "1.0.0",
+    "description": "Backend API for CTFQuest. Log in at POST /api/auth/login, copy the token, then click Authorize."
+  },
+  "servers": [{ "url": "http://localhost:5000" }],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
+      },
+      "Credentials": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "example": "sam@example.com" },
+          "password": { "type": "string", "example": "secret1234" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Check that the server is running",
+        "responses": { "200": { "description": "Server is up" } }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Create an account",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["username", "email", "password"],
+            "properties": {
+              "username": { "type": "string" },
+              "email": { "type": "string" },
+              "password": { "type": "string", "minLength": 8 }
+            }
+          } } }
+        },
+        "responses": {
+          "201": { "description": "Account created" },
+          "400": { "description": "Missing field or password too short" },
+          "409": { "description": "Username or email already exists" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in and receive a JWT",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credentials" } } }
+        },
+        "responses": {
+          "200": { "description": "Returns { token, user }" },
+          "401": { "description": "Invalid email or password" }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Current user profile with level, XP and streak",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Profile" },
+          "401": { "description": "Missing or invalid token" }
+        }
+      }
+    },
+    "/api/challenges": {
+      "get": {
+        "tags": ["Challenges"],
+        "summary": "List challenges (never includes the flag)",
+        "responses": { "200": { "description": "Array of challenges" } }
+      }
+    },
+    "/api/challenges/{id}": {
+      "get": {
+        "tags": ["Challenges"],
+        "summary": "One challenge",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "The challenge" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/api/challenges/{id}/submit": {
+      "post": {
+        "tags": ["Challenges"],
+        "summary": "Submit a flag. Awards XP once per challenge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "required": ["flag"],
+            "properties": { "flag": { "type": "string", "example": "CTFQUEST{...}" } }
+          } } }
+        },
+        "responses": {
+          "200": { "description": "{ correct: false } or { correct: true, xp_awarded, hints_used, badges_earned }" },
+          "400": { "description": "Flag missing" },
+          "401": { "description": "Not logged in" },
+          "409": { "description": "Already completed" }
+        }
+      }
+    },
+    "/api/challenges/{id}/hints/next": {
+      "post": {
+        "tags": ["Lifelines"],
+        "summary": "Unlock the next hint level (each hint costs 10% of the XP reward)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "{ level, content }" },
+          "404": { "description": "No more hints" }
+        }
+      }
+    },
+    "/api/challenges/{id}/start": {
+      "post": {
+        "tags": ["Environment"],
+        "summary": "Start your private Docker container for this challenge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Container running" },
+          "400": { "description": "Challenge has no environment" }
+        }
+      }
+    },
+    "/api/challenges/{id}/stop": {
+      "post": {
+        "tags": ["Environment"],
+        "summary": "Delete your container for this challenge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": { "200": { "description": "Container removed" } }
+      }
+    }
+  }
+}

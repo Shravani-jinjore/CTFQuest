@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const openapi = require('./openapi.json');
 const pool = require('./db');
 const authRoutes = require('./routes/auth');
 const learningRoutes = require('./routes/learning');
@@ -12,6 +14,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'CTFQuest backend is running' });
