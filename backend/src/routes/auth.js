@@ -1,13 +1,16 @@
-const { levelInfo } = require('../gamification');
 const express = require('express');
-const requireAuth = require('../middleware/auth');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
+const requireAuth = require('../middleware/auth');
+const rateLimit = require('../middleware/rateLimit');
+const { levelInfo } = require('../gamification');
 
 const router = express.Router();
 
-router.post('/register', async (req, res) => {
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+
+router.post('/register', authLimiter, async (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -33,7 +36,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -63,13 +66,15 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ error: 'server error' });
   }
 });
+
 router.get('/me', requireAuth, async (req, res) => {
   const [rows] = await pool.query(
     `SELECT id, username, email, role, xp,
-   CASE WHEN last_active >= CURDATE() - INTERVAL 1 DAY THEN streak_days ELSE 0 END AS streak_days
- FROM users WHERE id = ?`,
+       CASE WHEN last_active >= CURDATE() - INTERVAL 1 DAY THEN streak_days ELSE 0 END AS streak_days
+     FROM users WHERE id = ?`,
     [req.user.id]
   );
- res.json({ ...rows[0], ...levelInfo(rows[0].xp) });
+  res.json({ ...rows[0], ...levelInfo(rows[0].xp) });
 });
+
 module.exports = router;

@@ -3,6 +3,7 @@ const Docker = require('dockerode');
 const docker = new Docker();
 
 const TIMEOUT_MS = (Number(process.env.CHALLENGE_TIMEOUT_MINUTES) || 30) * 60 * 1000;
+const MAX_CONTAINERS_PER_USER = 2;
 const timers = new Map();
 
 function containerName(userId, challengeId) {
@@ -25,10 +26,20 @@ async function startChallenge(userId, challengeId, image) {
   await stopChallenge(userId, challengeId);
   const name = containerName(userId, challengeId);
 
+  const running = await docker.listContainers({
+    all: true,
+    filters: { label: [`ctfquest.user=${userId}`] },
+  });
+  if (running.length >= MAX_CONTAINERS_PER_USER) {
+    const err = new Error('container limit reached');
+    err.code = 'LIMIT';
+    throw err;
+  }
+
   const container = await docker.createContainer({
     Image: image,
     name,
-    Labels: { ctfquest: 'true' },
+    Labels: { ctfquest: 'true', 'ctfquest.user': String(userId) },
     HostConfig: {
       Memory: 128 * 1024 * 1024,
       NanoCpus: 500000000,

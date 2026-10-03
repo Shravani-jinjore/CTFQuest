@@ -4,8 +4,15 @@ const pool = require('../db');
 const { startChallenge, stopChallenge, TIMEOUT_MS } = require('../challengeManager');
 const { awardBadges } = require('../gamification');
 const requireAuth = require('../middleware/auth');
+const rateLimit = require('../middleware/rateLimit');
 
 const router = express.Router();
+
+const submitLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyFn: (req) => `user-${req.user.id}`,
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -35,7 +42,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/:id/submit', requireAuth, async (req, res) => {
+router.post('/:id/submit', requireAuth, submitLimiter, async (req, res) => {
   const { flag } = req.body;
   if (typeof flag !== 'string' || flag.trim() === '') {
     return res.status(400).json({ error: 'flag is required' });
@@ -187,6 +194,9 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     await startChallenge(req.user.id, req.params.id, rows[0].docker_image);
     res.json({ status: 'running', expires_in_minutes: TIMEOUT_MS / 60000 });
   } catch (err) {
+    if (err.code === 'LIMIT') {
+      return res.status(429).json({ error: 'you already have 2 running challenges, stop one first' });
+    }
     console.error(err);
     res.status(500).json({ error: 'could not start challenge' });
   }

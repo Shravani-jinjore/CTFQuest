@@ -1,3 +1,7 @@
+const rateLimit = require('../middleware/rateLimit');
+
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 });
+
 const jwt = require('jsonwebtoken');
 
 function requireAuth(req, res, next) {
