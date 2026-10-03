@@ -8,8 +8,38 @@ function TerminalView({ challengeId }) {
   const boxRef = useRef(null);
 
   useEffect(() => {
-    const term = new Terminal({ cols: 80, rows: 24, cursorBlink: true });
+    const term = new Terminal({
+      cols: 80,
+      rows: 20,
+      cursorBlink: true,
+      fontSize: 14,
+      theme: { background: '#0b0d12' },
+    });
     term.open(boxRef.current);
+
+    // Copy: selecting text copies it automatically
+    term.onSelectionChange(() => {
+      const text = term.getSelection();
+      if (text) navigator.clipboard.writeText(text).catch(() => {});
+    });
+
+    // Ctrl+C copies if text is selected (otherwise it interrupts), Ctrl+V pastes
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== 'keydown') return true;
+      const ctrl = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+
+      if (ctrl && key === 'c' && term.hasSelection()) {
+        navigator.clipboard.writeText(term.getSelection()).catch(() => {});
+        return false;
+      }
+      if (ctrl && key === 'v') {
+        e.preventDefault();
+        navigator.clipboard.readText().then((t) => term.paste(t)).catch(() => {});
+        return false;
+      }
+      return true;
+    });
 
     const ws = new WebSocket(WS_URL);
 
@@ -26,8 +56,7 @@ function TerminalView({ challengeId }) {
       if (msg.type === 'output') {
         term.write(msg.data);
       } else if (msg.type === 'ready') {
-        ws.send(JSON.stringify({ type: 'resize', cols: 80, rows: 24 }));
-        term.focus();
+        ws.send(JSON.stringify({ type: 'resize', cols: 80, rows: 20 }));
       } else if (msg.type === 'error') {
         term.write(`\r\n[error] ${msg.message}\r\n`);
       }
@@ -48,7 +77,7 @@ function TerminalView({ challengeId }) {
     };
   }, [challengeId]);
 
-  return <div ref={boxRef} />;
+  return <div ref={boxRef} className="terminal-box" />;
 }
 
 export default TerminalView;

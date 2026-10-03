@@ -12,7 +12,7 @@ function Challenge() {
   const [error, setError] = useState('');
   const [hints, setHints] = useState([]);
   const [hintMessage, setHintMessage] = useState('');
-  const [running, setRunning] = useState(false);
+  const [session, setSession] = useState(0);
   const [envMessage, setEnvMessage] = useState('');
 
   useEffect(() => {
@@ -62,12 +62,12 @@ function Challenge() {
   }
 
   async function handleStart() {
-    setRunning(false);
-    if (await callEnv('start')) setRunning(true);
+    setSession(0);
+    if (await callEnv('start')) setSession((s) => s + 1 || 1);
   }
 
   async function handleStop() {
-    setRunning(false);
+    setSession(0);
     await callEnv('stop');
   }
 
@@ -121,9 +121,9 @@ function Challenge() {
         setMessage(`Error: ${data.error}`);
       } else if (data.correct) {
         const badgeText = data.badges_earned.length
-  ? ` New badge: ${data.badges_earned.join(', ')}!`
-  : '';
-setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).${badgeText}`);
+          ? ` New badge: ${data.badges_earned.join(', ')}!`
+          : '';
+        setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).${badgeText}`);
       } else {
         setMessage(data.message);
       }
@@ -135,41 +135,55 @@ setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_
   if (error) return <p>{error}</p>;
   if (!challenge) return <p>Loading...</p>;
 
+  const running = session > 0;
+
   return (
     <div>
       <p><Link to="/challenges">← All challenges</Link></p>
-      <h2>{challenge.title}</h2>
-      <p>{challenge.difficulty} | {challenge.xp_reward} XP</p>
-      <p>{challenge.description}</p>
 
-      <h3>Environment</h3>
-      <button onClick={handleStart}>{running ? 'Restart' : 'Start challenge'}</button>{' '}
-      {running && <button onClick={handleStop}>Stop</button>}
-      <p>{envMessage}</p>
-      {running && <TerminalView key={Date.now()} challengeId={id} />}
+      <div className="card">
+        <h2>{challenge.title}</h2>
+        <p className="muted">{challenge.difficulty} · {challenge.xp_reward} XP</p>
+        <p>{challenge.description}</p>
+      </div>
 
-      <h3>Submit your flag</h3>
-      <form onSubmit={handleSubmit}>
-        <input
-          placeholder="CTFQUEST{...}"
-          value={flag}
-          onChange={(e) => setFlag(e.target.value)}
-        />
-        <button type="submit">Submit flag</button>
+      <div className="card">
+        <h3>Environment</h3>
+        <div className="row">
+          <button onClick={handleStart}>{running ? 'Restart' : 'Start challenge'}</button>
+          {running && <button className="secondary" onClick={handleStop}>Stop</button>}
+        </div>
+        <p className="muted">{envMessage}</p>
+        {running && <TerminalView key={session} challengeId={id} />}
+        {running && <p className="muted">Select text to copy it. Ctrl+V pastes into the terminal.</p>}
+      </div>
+
+      <div className="card">
+        <h3>Submit your flag</h3>
+        <form onSubmit={handleSubmit} className="row">
+          <input
+            placeholder="CTFQUEST{...}"
+            value={flag}
+            onChange={(e) => setFlag(e.target.value)}
+          />
+          <button type="submit">Submit</button>
+        </form>
         <p>{message}</p>
-      </form>
+      </div>
 
-      <h3>Stuck?</h3>
-      <p>Each hint you use reduces the XP reward by 10%.</p>
-      <button onClick={handleStuck}>I'm stuck</button>
-      <p>{hintMessage}</p>
-      <ol>
-        {hints.map((h) => (
-          <li key={h.level}>
-            <strong>Hint {h.level}:</strong> {h.content}
-          </li>
-        ))}
-      </ol>
+      <div className="card">
+        <h3>Stuck?</h3>
+        <p className="muted">Each hint you use reduces the XP reward by 10%.</p>
+        <button className="secondary" onClick={handleStuck}>I'm stuck</button>
+        <p>{hintMessage}</p>
+        <ol>
+          {hints.map((h) => (
+            <li key={h.level}>
+              <strong>Hint {h.level}:</strong> {h.content}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
