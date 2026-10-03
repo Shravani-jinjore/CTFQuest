@@ -21,7 +21,7 @@ INSERT INTO challenges (category_id, title, description, difficulty, xp_reward, 
 SELECT id,
   'Hidden File',
   'A file with a secret is hiding in your home directory. Normal ls will not show it. Find it, read it, and submit the flag.',
-  'easy', 50, SHA2('CTFQUEST{h1dd3n_f1l3_f0und}', 256)
+    'easy', 50, SHA2('placeholder-set-real-flag-after-seeding', 256)
 FROM categories WHERE name = 'Linux'
 AND NOT EXISTS (SELECT 1 FROM challenges WHERE title = 'Hidden File');
 INSERT IGNORE INTO hints (challenge_id, level, content)

@@ -9,6 +9,8 @@ function rateLimit({ windowMs, max, keyFn }) {
   }, windowMs).unref();
 
   return (req, res, next) => {
+    if (process.env.NODE_ENV === 'test') return next();
+
     const key = keyFn ? keyFn(req) : req.ip;
     const now = Date.now();
     let entry = hits.get(key);

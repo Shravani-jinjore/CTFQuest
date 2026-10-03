@@ -3,6 +3,7 @@ const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const openapi = require('./openapi.json');
 const pool = require('./db');
+const securityHeaders = require('./middleware/security');
 const authRoutes = require('./routes/auth');
 const learningRoutes = require('./routes/learning');
 const challengeRoutes = require('./routes/challenges');
@@ -12,8 +13,10 @@ const adminRoutes = require('./routes/admin');
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.disable('x-powered-by');
+app.use(securityHeaders);
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
+app.use(express.json({ limit: '10kb' }));
 
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
@@ -26,8 +29,13 @@ app.get('/api/hello/:name', (req, res) => {
 });
 
 app.get('/api/categories', async (req, res) => {
-  const [rows] = await pool.query('SELECT id, name FROM categories');
-  res.json(rows);
+  try {
+    const [rows] = await pool.query('SELECT id, name FROM categories');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'server error' });
+  }
 });
 
 app.use('/api/auth', authRoutes);
