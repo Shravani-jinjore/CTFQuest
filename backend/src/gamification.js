@@ -15,6 +15,8 @@ async function awardBadges(conn, userId, hintsUsed) {
   if (hintsUsed === 0) codes.push('no_hints');
   if (user.streak_days >= 3) codes.push('streak_3');
 
+  
+
   const earned = [];
   for (const code of codes) {
     const [[badge]] = await conn.query('SELECT id, name FROM badges WHERE code = ?', [code]);

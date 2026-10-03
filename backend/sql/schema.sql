@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
   xp INT NOT NULL DEFAULT 0,
+    streak_days INT NOT NULL DEFAULT 0,
+  last_active DATE NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -21,6 +23,7 @@ CREATE TABLE IF NOT EXISTS challenges (
   difficulty ENUM('easy', 'medium', 'hard') NOT NULL,
   xp_reward INT NOT NULL,
   flag_hash VARCHAR(255) NOT NULL,
+    docker_image VARCHAR(100) NULL,
   FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
