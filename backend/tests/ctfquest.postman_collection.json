@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "CTFQuest API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5001" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('status is 200', () => pm.response.to.have.status(200));",
+        "pm.test('status field is ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+      ] } }]
+    },
+    {
+      "name": "Register",
+      "event": [
+        { "listen": "prerequest", "script": { "exec": [
+          "pm.collectionVariables.set('stamp', Date.now());"
+        ] } },
+        { "listen": "test", "script": { "exec": [
+          "pm.test('status is 201', () => pm.response.to.have.status(201));",
+          "pm.test('no password hash leaked', () => pm.expect(pm.response.text()).to.not.include('password'));"
+        ] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/register",
+        "body": { "mode": "raw", "raw": "{\"username\":\"newman_{{stamp}}\",\"email\":\"newman_{{stamp}}@example.com\",\"password\":\"password1234\"}" }
+      }
+    },
+    {
+      "name": "Login",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('status is 200', () => pm.response.to.have.status(200));",
+        "pm.test('token returned', () => pm.expect(pm.response.json().token).to.be.a('string'));",
+        "pm.collectionVariables.set('token', pm.response.json().token);"
+      ] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/auth/login",
+        "body": { "mode": "raw", "raw": "{\"email\":\"newman_{{stamp}}@example.com\",\"password\":\"password1234\"}" }
+      }
+    },
+    {
+      "name": "Me (with token)",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('status is 200', () => pm.response.to.have.status(200));",
+        "pm.test('username starts with newman_', () => pm.expect(pm.response.json().username).to.include('newman_'));"
+      ] } }],
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "Me (no token)",
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('status is 401', () => pm.response.to.have.status(401));"
+      ] } }],
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/auth/me" }
+    }
+  ]
+}

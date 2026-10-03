@@ -10,7 +10,9 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFiles": ["./tests/setup.js"]
+    "setupFiles": [
+      "./tests/setup.js"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "jest": "^30.5.2",
+    "newman": "^6.2.2",
     "supertest": "^7.3.1"
   }
 }
