@@ -16,15 +16,19 @@ function Challenges() {
 
   return (
     <div>
-      <h2>Challenges</h2>
+      <h2 className="page-title">Challenges</h2>
+      <p className="page-sub">Pick one, start a terminal, and find the flag.</p>
       {error && <p>{error}</p>}
-      <ul>
+      <div className="grid">
         {challenges.map((c) => (
-          <li key={c.id}>
-            <Link to={`/challenges/${c.id}`}>{c.title}</Link> ({c.difficulty}, {c.xp_reward} XP)
-          </li>
+          <Link key={c.id} to={`/challenges/${c.id}`} className="tile">
+            <div className="icon">🚩</div>
+            <h3>{c.title}</h3>
+            <span className={`pill ${c.difficulty}`}>{c.difficulty}</span>{' '}
+            <span className="pill xp">{c.xp_reward} XP</span>
+          </Link>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

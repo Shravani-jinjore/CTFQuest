@@ -25,21 +25,35 @@ function Dashboard({ user }) {
 
   return (
     <div>
-      <h2>Welcome, {me.username}!</h2>
-      <p>Level {me.level ?? 1} | {me.xp} XP | Streak: {me.streak_days ?? 0} day(s)</p>
-      <div style={{ background: '#333a4d', borderRadius: 6, height: 12 }}>
-        <div style={{ width: `${percent}%`, background: '#4f7cff', height: 12, borderRadius: 6 }} />
-      </div>
-      <p>{me.xp_into_level ?? 0} / {me.xp_per_level ?? 100} XP to next level</p>
+      <h2 className="page-title">Welcome, {me.username}</h2>
+      <p className="page-sub">Here is your progress.</p>
 
-      <h3>Badges</h3>
-      <ul>
+      <div className="stats">
+        <div className="stat"><div className="num">{me.level ?? 1}</div><div className="label">Level</div></div>
+        <div className="stat"><div className="num">{me.xp}</div><div className="label">Total XP</div></div>
+        <div className="stat"><div className="num">🔥 {me.streak_days ?? 0}</div><div className="label">Day streak</div></div>
+      </div>
+
+      <div className="card">
+        <h3>Next level</h3>
+        <div className="bar"><div style={{ width: `${percent}%` }} /></div>
+        <p className="muted" style={{ marginTop: 8 }}>
+          {me.xp_into_level ?? 0} / {me.xp_per_level ?? 100} XP
+        </p>
+      </div>
+
+      <div className="card">
+        <h3>Badges</h3>
         {badges.map((b) => (
-          <li key={b.code} style={{ opacity: b.earned ? 1 : 0.4 }}>
-            {b.earned ? '🏅' : '🔒'} <strong>{b.name}</strong>: {b.description}
-          </li>
+          <div key={b.code} className={`badge-item ${b.earned ? '' : 'locked'}`}>
+            <span className="emoji">{b.earned ? '🏅' : '🔒'}</span>
+            <div>
+              <strong>{b.name}</strong>
+              <div className="muted">{b.description}</div>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

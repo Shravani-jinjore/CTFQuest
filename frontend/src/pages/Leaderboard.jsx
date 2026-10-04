@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 const API_URL = 'http://localhost:5000';
+const MEDALS = ['🥇', '🥈', '🥉'];
 
 function Leaderboard() {
   const [rows, setRows] = useState([]);
@@ -15,15 +16,27 @@ function Leaderboard() {
 
   return (
     <div>
-      <h2>Leaderboard</h2>
+      <h2 className="page-title">Leaderboard</h2>
+      <p className="page-sub">Top players by XP.</p>
       {error && <p>{error}</p>}
-      <ol>
-        {rows.map((r) => (
-          <li key={r.id}>
-            {r.username}: {r.xp} XP (level {r.level}, {r.solved} solved)
-          </li>
-        ))}
-      </ol>
+      <div className="card">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Player</th><th>Level</th><th>Solved</th><th>XP</th></tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.id}>
+                <td className="rank">{MEDALS[i] || i + 1}</td>
+                <td>{r.username}</td>
+                <td>{r.level}</td>
+                <td>{r.solved}</td>
+                <td><strong>{r.xp}</strong></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

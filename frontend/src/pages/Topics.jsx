@@ -19,17 +19,17 @@ function Topics() {
     <div>
       <p><Link to="/learn">← All categories</Link></p>
       {error && <p>{error}</p>}
-      {topics.length === 0 && !error && <p>No topics yet.</p>}
+      {topics.length === 0 && !error && <p className="muted">No topics yet.</p>}
       {topics.map((topic) => (
-        <div key={topic.id}>
+        <div className="card" key={topic.id}>
           <h3>{topic.title}</h3>
-          <ol>
-            {topic.lessons.map((lesson) => (
+          <ul className="lesson-list">
+            {topic.lessons.map((lesson, i) => (
               <li key={lesson.id}>
-                <Link to={`/learn/lesson/${lesson.id}`}>{lesson.title}</Link>
+                <Link to={`/learn/lesson/${lesson.id}`}>{i + 1}. {lesson.title}</Link>
               </li>
             ))}
-          </ol>
+          </ul>
         </div>
       ))}
     </div>

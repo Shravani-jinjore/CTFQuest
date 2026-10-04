@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { Routes, Route, Link, NavLink, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -44,33 +45,33 @@ function App() {
     setUser(null);
   }
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <p className="muted" style={{ padding: 40 }}>Loading...</p>;
 
   return (
     <div>
-      <h1>CTFQuest</h1>
-      <nav>
-        {user ? (
-          <>
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/learn">Learn</Link>
-            <Link to="/challenges">Challenges</Link>
-            <Link to="/leaderboard">Leaderboard</Link>
-            {user.role === 'admin' && <Link to="/admin">Admin</Link>}
-            <button onClick={handleLogout}>Log out</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
-            <Link to="/learn">Learn</Link>
-            <Link to="/challenges">Challenges</Link>
-            <Link to="/leaderboard">Leaderboard</Link>
-          </>
-        )}
-      </nav>
+      <header className="navbar">
+        <Link to="/" className="brand">CTFQuest</Link>
+        <nav className="nav-links">
+          <NavLink to="/learn">Learn</NavLink>
+          <NavLink to="/challenges">Challenges</NavLink>
+          <NavLink to="/leaderboard">Leaderboard</NavLink>
+          {user ? (
+            <>
+              <NavLink to="/dashboard">Dashboard</NavLink>
+              {user.role === 'admin' && <NavLink to="/admin">Admin</NavLink>}
+              <button className="secondary" onClick={handleLogout}>Log out</button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/login">Login</NavLink>
+              <NavLink to="/register">Register</NavLink>
+            </>
+          )}
+        </nav>
+      </header>
 
       <Routes>
+        <Route path="/" element={<Home user={user} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login setUser={setUser} />} />
         <Route
@@ -84,10 +85,10 @@ function App() {
         <Route path="/challenges/:id" element={<Challenge />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route
-  path="/admin"
-  element={user && user.role === 'admin' ? <Admin /> : <Navigate to="/dashboard" />}
-/>
-        <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
+          path="/admin"
+          element={user && user.role === 'admin' ? <Admin /> : <Navigate to="/dashboard" />}
+        />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
   );

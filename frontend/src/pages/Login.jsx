@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost:5000';
 
@@ -27,12 +27,10 @@ function Login({ setUser }) {
       }
 
       localStorage.setItem('token', data.token);
-
       const meResponse = await fetch(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${data.token}` },
       });
-      const me = await meResponse.json();
-      setUser(me);
+      setUser(await meResponse.json());
       navigate('/dashboard');
     } catch (err) {
       setMessage('Could not reach the server. Is the backend running?');
@@ -40,23 +38,17 @@ function Login({ setUser }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button type="submit">Log in</button>
-      <p>{message}</p>
-    </form>
+    <div className="card auth-card">
+      <h2>Welcome back</h2>
+      <p className="muted">Log in to continue your quest.</p>
+      <form onSubmit={handleSubmit}>
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button type="submit">Log in</button>
+        <p className="msg" style={{ color: 'var(--bad)' }}>{message}</p>
+      </form>
+      <p className="muted">No account? <Link to="/register">Register</Link></p>
+    </div>
   );
 }
 

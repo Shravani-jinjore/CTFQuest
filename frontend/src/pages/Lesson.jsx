@@ -19,13 +19,16 @@ function Lesson() {
   }, [id]);
 
   if (error) return <p>{error}</p>;
-  if (!lesson) return <p>Loading...</p>;
+  if (!lesson) return <p className="muted">Loading...</p>;
 
   return (
     <div>
       <p><Link to="/learn">← Back to learning</Link></p>
-      <h2>{lesson.title}</h2>
-      <p>{lesson.content}</p>
+      <div className="card">
+        <h2>{lesson.title}</h2>
+        <p className="lesson-text">{lesson.content}</p>
+      </div>
+      <Link to="/challenges"><button>Practice with a challenge</button></Link>
     </div>
   );
 }
