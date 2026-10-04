@@ -14,8 +14,15 @@ function Challenge() {
   const [hintMessage, setHintMessage] = useState('');
   const [session, setSession] = useState(0);
   const [envMessage, setEnvMessage] = useState('');
+  const [solved, setSolved] = useState(false);
+  const [nextId, setNextId] = useState(null);
 
   useEffect(() => {
+    setSolved(false);
+    setMessage('');
+    setFlag('');
+    setSession(0);
+
     fetch(`${API_URL}/api/challenges/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
@@ -23,18 +30,26 @@ function Challenge() {
       })
       .then((data) => setChallenge(data))
       .catch(() => setError('Challenge not found.'));
-  }, [id]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    fetch(`${API_URL}/api/challenges/${id}/hints`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setHints(data))
+    fetch(`${API_URL}/api/challenges`)
+      .then((res) => res.json())
+      .then((list) => {
+        const next = list.find((c) => c.id > Number(id));
+        setNextId(next ? next.id : null);
+      })
       .catch(() => {});
+
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${API_URL}/api/challenges/${id}/hints`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => setHints(data))
+        .catch(() => {});
+    } else {
+      setHints([]);
+    }
   }, [id]);
 
   async function callEnv(action) {
@@ -63,7 +78,7 @@ function Challenge() {
 
   async function handleStart() {
     setSession(0);
-    if (await callEnv('start')) setSession((s) => s + 1 || 1);
+    if (await callEnv('start')) setSession(Date.now());
   }
 
   async function handleStop() {
@@ -78,14 +93,12 @@ function Challenge() {
       setHintMessage('Please log in to use hints.');
       return;
     }
-
     try {
       const response = await fetch(`${API_URL}/api/challenges/${id}/hints/next`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-
       if (response.ok) {
         setHints((current) => [...current, data]);
       } else {
@@ -99,31 +112,30 @@ function Challenge() {
   async function handleSubmit(event) {
     event.preventDefault();
     setMessage('');
-
     const token = localStorage.getItem('token');
     if (!token) {
       setMessage('Please log in to submit a flag.');
       return;
     }
-
     try {
       const response = await fetch(`${API_URL}/api/challenges/${id}/submit`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ flag }),
       });
       const data = await response.json();
 
       if (!response.ok) {
         setMessage(`Error: ${data.error}`);
+        if (data.error === 'already completed') setSolved(true);
       } else if (data.correct) {
         const badgeText = data.badges_earned.length
           ? ` New badge: ${data.badges_earned.join(', ')}!`
           : '';
         setMessage(`Correct! You earned ${data.xp_awarded} XP (hints used: ${data.hints_used}).${badgeText}`);
+        setSolved(true);
+        setSession(0);
+        callEnv('stop');
       } else {
         setMessage(data.message);
       }
@@ -147,43 +159,56 @@ function Challenge() {
         <p>{challenge.description}</p>
       </div>
 
-      <div className="card">
-        <h3>Environment</h3>
-        <div className="row">
-          <button onClick={handleStart}>{running ? 'Restart' : 'Start challenge'}</button>
-          {running && <button className="secondary" onClick={handleStop}>Stop</button>}
+      {solved && (
+        <div className="card" style={{ borderColor: 'var(--good)' }}>
+          <h3>🎉 Challenge complete!</h3>
+          <p>{message}</p>
+          <div className="row">
+            {nextId ? (
+              <Link to={`/challenges/${nextId}`}><button>Next challenge →</button></Link>
+            ) : (
+              <p className="muted">That was the last challenge for now.</p>
+            )}
+            <Link to="/dashboard"><button className="secondary">View progress</button></Link>
+          </div>
         </div>
-        <p className="muted">{envMessage}</p>
-        {running && <TerminalView key={session} challengeId={id} />}
-        {running && <p className="muted">Select text to copy it. Ctrl+V pastes into the terminal.</p>}
-      </div>
+      )}
 
-      <div className="card">
-        <h3>Submit your flag</h3>
-        <form onSubmit={handleSubmit} className="row">
-          <input
-            placeholder="CTFQUEST{...}"
-            value={flag}
-            onChange={(e) => setFlag(e.target.value)}
-          />
-          <button type="submit">Submit</button>
-        </form>
-        <p>{message}</p>
-      </div>
+      {!solved && (
+        <>
+          <div className="card">
+            <h3>Environment</h3>
+            <div className="row">
+              <button onClick={handleStart}>{running ? 'Restart' : 'Start challenge'}</button>
+              {running && <button className="secondary" onClick={handleStop}>Stop</button>}
+            </div>
+            <p className="muted">{envMessage}</p>
+            {running && <TerminalView key={session} challengeId={id} />}
+            {running && <p className="muted">Select text to copy it. Ctrl+V pastes into the terminal.</p>}
+          </div>
 
-      <div className="card">
-        <h3>Stuck?</h3>
-        <p className="muted">Each hint you use reduces the XP reward by 10%.</p>
-        <button className="secondary" onClick={handleStuck}>I'm stuck</button>
-        <p>{hintMessage}</p>
-        <ol>
-          {hints.map((h) => (
-            <li key={h.level}>
-              <strong>Hint {h.level}:</strong> {h.content}
-            </li>
-          ))}
-        </ol>
-      </div>
+          <div className="card">
+            <h3>Submit your flag</h3>
+            <form onSubmit={handleSubmit} className="row">
+              <input placeholder="CTFQUEST{...}" value={flag} onChange={(e) => setFlag(e.target.value)} />
+              <button type="submit">Submit</button>
+            </form>
+            <p>{message}</p>
+          </div>
+
+          <div className="card">
+            <h3>Stuck?</h3>
+            <p className="muted">Each hint you use reduces the XP reward by 10%.</p>
+            <button className="secondary" onClick={handleStuck}>I'm stuck</button>
+            <p>{hintMessage}</p>
+            <ol>
+              {hints.map((h) => (
+                <li key={h.level}><strong>Hint {h.level}:</strong> {h.content}</li>
+              ))}
+            </ol>
+          </div>
+        </>
+      )}
     </div>
   );
 }
