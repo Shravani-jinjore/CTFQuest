@@ -29,7 +29,10 @@ function Dashboard({ user }) {
       <p className="page-sub">Here is your progress.</p>
 
       <div className="stats">
-        <div className="stat"><div className="num">{me.level ?? 1}</div><div className="label">Level</div></div>
+        <div className="stat">
+          <div className="num">{me.level ?? 1}</div>
+          <div className="label">Level · {me.title ?? 'Newbie'}</div>
+        </div>
         <div className="stat"><div className="num">{me.xp}</div><div className="label">Total XP</div></div>
         <div className="stat"><div className="num">🔥 {me.streak_days ?? 0}</div><div className="label">Day streak</div></div>
       </div>

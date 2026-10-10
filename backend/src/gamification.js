@@ -1,8 +1,15 @@
 const XP_PER_LEVEL = 100;
 
+const TITLES = [
+  'Newbie', 'Explorer', 'Apprentice', 'Hacker', 'Operator',
+  'Specialist', 'Expert', 'Veteran', 'Master', 'Legend',
+];
+
 function levelInfo(xp) {
+  const level = Math.floor(xp / XP_PER_LEVEL) + 1;
   return {
-    level: Math.floor(xp / XP_PER_LEVEL) + 1,
+    level,
+    title: TITLES[Math.min(level, TITLES.length) - 1],
     xp_into_level: xp % XP_PER_LEVEL,
     xp_per_level: XP_PER_LEVEL,
   };

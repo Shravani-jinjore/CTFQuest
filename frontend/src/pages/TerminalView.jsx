@@ -4,10 +4,12 @@ import '@xterm/xterm/css/xterm.css';
 
 const WS_URL = 'ws://localhost:5000/ws/terminal';
 
-function TerminalView({ challengeId }) {
+function TerminalView({ challengeId, onAutoSubmit }) {
   const boxRef = useRef(null);
+  const submittedRef = useRef(new Set());
 
   useEffect(() => {
+    submittedRef.current.clear();
     const term = new Terminal({
       cols: 80,
       rows: 20,
@@ -55,6 +57,17 @@ function TerminalView({ challengeId }) {
       const msg = JSON.parse(event.data);
       if (msg.type === 'output') {
         term.write(msg.data);
+        if (onAutoSubmit && typeof msg.data === 'string') {
+          const match = msg.data.match(/\[CTFQUEST_SUBMIT:(.+?)\]/);
+          if (match && match[1]) {
+            const rawFlag = match[1].trim();
+            if (!submittedRef.current.has(rawFlag)) {
+              submittedRef.current.add(rawFlag);
+              term.write('\r\n\x1b[33m[CTFQuest] Submitting flag to server...\x1b[0m\r\n');
+              onAutoSubmit(rawFlag);
+            }
+          }
+        }
       } else if (msg.type === 'ready') {
         ws.send(JSON.stringify({ type: 'resize', cols: 80, rows: 20 }));
       } else if (msg.type === 'error') {
