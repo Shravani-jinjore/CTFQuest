@@ -6,7 +6,47 @@ const { awardBadges } = require('../gamification');
 const requireAuth = require('../middleware/auth');
 const rateLimit = require('../middleware/rateLimit');
 
+const jwt = require('jsonwebtoken');
+
 const router = express.Router();
+
+function getOptionalUser(req) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Bearer ')) return null;
+  const token = header.slice(7);
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+async function getChallengeLockStatus(db, userId, challengeId) {
+  const [prevRows] = await db.query(
+    'SELECT id, title FROM challenges WHERE id < ? ORDER BY id DESC LIMIT 1',
+    [challengeId]
+  );
+  const prevChallenge = prevRows[0] || null;
+  if (!prevChallenge) {
+    return { locked: false, prevChallenge: null };
+  }
+
+  if (!userId) {
+    return { locked: true, prevChallenge };
+  }
+
+  const [done] = await db.query(
+    'SELECT challenge_id FROM completions WHERE user_id = ? AND challenge_id IN (?, ?)',
+    [userId, challengeId, prevChallenge.id]
+  );
+  const doneIds = new Set(done.map((d) => d.challenge_id));
+  const isUnlocked = doneIds.has(Number(challengeId)) || doneIds.has(prevChallenge.id);
+
+  return {
+    locked: !isUnlocked,
+    prevChallenge,
+  };
+}
 
 const submitLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -16,10 +56,36 @@ const submitLimiter = rateLimit({
 
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const [challenges] = await pool.query(
       'SELECT id, category_id, title, difficulty, xp_reward FROM challenges ORDER BY id'
     );
-    res.json(rows);
+    const user = getOptionalUser(req);
+    let completedSet = new Set();
+    if (user) {
+      const [completions] = await pool.query(
+        'SELECT challenge_id FROM completions WHERE user_id = ?',
+        [user.id]
+      );
+      completedSet = new Set(completions.map((c) => c.challenge_id));
+    }
+
+    const result = challenges.map((c, index) => {
+      const isFirst = index === 0;
+      const prevChallenge = index > 0 ? challenges[index - 1] : null;
+      const completed = completedSet.has(c.id);
+      const prevCompleted = prevChallenge ? completedSet.has(prevChallenge.id) : true;
+      const unlocked = isFirst || (user && (completed || prevCompleted));
+
+      return {
+        ...c,
+        completed,
+        locked: !unlocked,
+        prev_id: prevChallenge ? prevChallenge.id : null,
+        prev_title: prevChallenge ? prevChallenge.title : null,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'server error' });
@@ -35,7 +101,26 @@ router.get('/:id', async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'challenge not found' });
     }
-    res.json(rows[0]);
+    const challenge = rows[0];
+    const user = getOptionalUser(req);
+    const lockStatus = await getChallengeLockStatus(pool, user?.id, challenge.id);
+
+    let completed = false;
+    if (user) {
+      const [done] = await pool.query(
+        'SELECT 1 FROM completions WHERE user_id = ? AND challenge_id = ?',
+        [user.id, challenge.id]
+      );
+      completed = done.length > 0;
+    }
+
+    res.json({
+      ...challenge,
+      completed,
+      locked: lockStatus.locked,
+      prev_id: lockStatus.prevChallenge ? lockStatus.prevChallenge.id : null,
+      prev_title: lockStatus.prevChallenge ? lockStatus.prevChallenge.title : null,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'server error' });
@@ -53,6 +138,13 @@ router.post('/:id/submit', requireAuth, submitLimiter, async (req, res) => {
   const conn = await pool.getConnection();
 
   try {
+    const lockStatus = await getChallengeLockStatus(conn, userId, challengeId);
+    if (lockStatus.locked) {
+      return res.status(403).json({
+        error: `Level locked. You must complete the previous level ("${lockStatus.prevChallenge?.title}") first.`,
+      });
+    }
+
     const [rows] = await conn.query(
       'SELECT id, xp_reward, flag_hash FROM challenges WHERE id = ?',
       [challengeId]
@@ -133,6 +225,13 @@ router.post('/:id/hints/next', requireAuth, async (req, res) => {
   const challengeId = req.params.id;
 
   try {
+    const lockStatus = await getChallengeLockStatus(pool, userId, challengeId);
+    if (lockStatus.locked) {
+      return res.status(403).json({
+        error: `Level locked. You must complete the previous level ("${lockStatus.prevChallenge?.title}") first.`,
+      });
+    }
+
     const [used] = await pool.query(
       'SELECT COALESCE(MAX(level), 0) AS last FROM hint_usage WHERE user_id = ? AND challenge_id = ?',
       [userId, challengeId]
@@ -163,6 +262,13 @@ router.post('/:id/hints/next', requireAuth, async (req, res) => {
 
 router.get('/:id/hints', requireAuth, async (req, res) => {
   try {
+    const lockStatus = await getChallengeLockStatus(pool, req.user.id, req.params.id);
+    if (lockStatus.locked) {
+      return res.status(403).json({
+        error: `Level locked. You must complete the previous level ("${lockStatus.prevChallenge?.title}") first.`,
+      });
+    }
+
     const [rows] = await pool.query(
       `SELECT h.level, h.content
        FROM hints h
@@ -180,6 +286,13 @@ router.get('/:id/hints', requireAuth, async (req, res) => {
 
 router.post('/:id/start', requireAuth, async (req, res) => {
   try {
+    const lockStatus = await getChallengeLockStatus(pool, req.user.id, req.params.id);
+    if (lockStatus.locked) {
+      return res.status(403).json({
+        error: `Level locked. You must complete the previous level ("${lockStatus.prevChallenge?.title}") first.`,
+      });
+    }
+
     const [rows] = await pool.query(
       'SELECT docker_image FROM challenges WHERE id = ?',
       [req.params.id]

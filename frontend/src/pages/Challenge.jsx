@@ -18,7 +18,7 @@ function Challenge() {
   const [solved, setSolved] = useState(false);
   const [nextId, setNextId] = useState(null);
   const [prevId, setPrevId] = useState(null);
-  const [autoAdvanceCountdown, setAutoAdvanceCountdown] = useState(null);
+  const [nextChallenge, setNextChallenge] = useState(null);
 
   useEffect(() => {
     setSolved(false);
@@ -26,13 +26,13 @@ function Challenge() {
     setFlag('');
     setSession(0);
     setEnvMessage('Initializing terminal environment...');
-    setAutoAdvanceCountdown(null);
 
     let isMounted = true;
     const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     // 1. Fetch challenge info
-    fetch(`${API_URL}/api/challenges/${id}`)
+    fetch(`${API_URL}/api/challenges/${id}`, { headers })
       .then((res) => {
         if (!res.ok) throw new Error('not found');
         return res.json();
@@ -40,6 +40,15 @@ function Challenge() {
       .then((data) => {
         if (!isMounted) return;
         setChallenge(data);
+        if (data.completed) {
+          setSolved(true);
+        }
+
+        // If level is locked, do not auto-start terminal environment
+        if (data.locked) {
+          setEnvMessage('');
+          return;
+        }
 
         // 2. Automatically start the environment and open the terminal if logged in
         if (token) {
@@ -69,15 +78,17 @@ function Challenge() {
       });
 
     // 3. Find next and previous challenge IDs
-    fetch(`${API_URL}/api/challenges`)
+    fetch(`${API_URL}/api/challenges`, { headers })
       .then((res) => res.json())
       .then((list) => {
         if (!isMounted) return;
         const sorted = [...list].sort((a, b) => a.id - b.id);
         const currentIndex = sorted.findIndex((c) => c.id === Number(id));
         if (currentIndex !== -1) {
-          setNextId(currentIndex < sorted.length - 1 ? sorted[currentIndex + 1].id : null);
+          const nextItem = currentIndex < sorted.length - 1 ? sorted[currentIndex + 1] : null;
+          setNextId(nextItem ? nextItem.id : null);
           setPrevId(currentIndex > 0 ? sorted[currentIndex - 1].id : null);
+          setNextChallenge(nextItem);
         }
       })
       .catch(() => {});
@@ -89,7 +100,7 @@ function Challenge() {
       })
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => {
-          if (isMounted) setHints(data);
+          if (isMounted && Array.isArray(data)) setHints(data);
         })
         .catch(() => {});
     } else {
@@ -102,6 +113,7 @@ function Challenge() {
   }, [id]);
 
   async function callEnv(action) {
+    if (challenge?.locked) return false;
     setEnvMessage('');
     const token = localStorage.getItem('token');
     if (!token) {
@@ -119,13 +131,14 @@ function Challenge() {
         return false;
       }
       return true;
-    } catch (err) {
+    } catch {
       setEnvMessage('Could not reach the server.');
       return false;
     }
   }
 
   async function handleStart() {
+    if (challenge?.locked) return;
     setSession(0);
     setEnvMessage('Starting terminal...');
     if (await callEnv('start')) {
@@ -141,6 +154,7 @@ function Challenge() {
   }
 
   async function handleStuck() {
+    if (challenge?.locked) return;
     setHintMessage('');
     const token = localStorage.getItem('token');
     if (!token) {
@@ -158,13 +172,17 @@ function Challenge() {
       } else {
         setHintMessage(data.error === 'no more hints' ? 'No more hints available.' : `Error: ${data.error}`);
       }
-    } catch (err) {
+    } catch {
       setHintMessage('Could not reach the server.');
     }
   }
 
   async function handleSubmit(event, directFlag = null) {
     if (event) event.preventDefault();
+    if (challenge?.locked) {
+      setMessage('This level is locked. Complete the previous level first.');
+      return;
+    }
     const submissionFlag = directFlag !== null ? directFlag : flag;
     setMessage('');
     const token = localStorage.getItem('token');
@@ -200,7 +218,6 @@ function Challenge() {
 
         // Auto-advance to next challenge without manual actions
         if (nextId) {
-          setAutoAdvanceCountdown(2);
           setTimeout(() => {
             navigate(`/challenges/${nextId}`);
           }, 1800);
@@ -208,7 +225,7 @@ function Challenge() {
       } else {
         setMessage(data.message || 'Wrong flag. Try again!');
       }
-    } catch (err) {
+    } catch {
       setMessage('Could not reach the server.');
     }
   }
@@ -216,7 +233,49 @@ function Challenge() {
   if (error) return <p>{error}</p>;
   if (!challenge) return <p>Loading challenge...</p>;
 
+  if (challenge.locked) {
+    return (
+      <div>
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: '14px' }}>
+          <p style={{ margin: 0 }}><Link to="/challenges">← All challenges</Link></p>
+          <div className="row" style={{ gap: '8px' }}>
+            {prevId && (
+              <Link to={`/challenges/${prevId}`}>
+                <button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>← Prev</button>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '14px' }}>🔒</div>
+          <h2>Level Locked</h2>
+          <p className="muted" style={{ maxWidth: '520px', margin: '0 auto 20px', fontSize: '1.05rem', lineHeight: 1.6 }}>
+            This level cannot be opened yet! You must complete the previous level
+            {challenge.prev_title ? (
+              <strong> &ldquo;{challenge.prev_title}&rdquo; </strong>
+            ) : (
+              ' '
+            )}
+            first before this challenge will unlock.
+          </p>
+          <div className="row" style={{ justifyContent: 'center', gap: '12px' }}>
+            {challenge.prev_id && (
+              <Link to={`/challenges/${challenge.prev_id}`}>
+                <button>Go to Previous Level ({challenge.prev_title || '#' + challenge.prev_id}) →</button>
+              </Link>
+            )}
+            <Link to="/challenges">
+              <button className="secondary">View All Challenges</button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const running = session > 0;
+  const isNextUnlocked = Boolean(solved || challenge.completed || (nextChallenge && !nextChallenge.locked));
 
   return (
     <div>
@@ -227,7 +286,18 @@ function Challenge() {
             <Link to={`/challenges/${prevId}`}><button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>← Prev</button></Link>
           )}
           {nextId && (
-            <Link to={`/challenges/${nextId}`}><button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>Next →</button></Link>
+            isNextUnlocked ? (
+              <Link to={`/challenges/${nextId}`}><button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>Next →</button></Link>
+            ) : (
+              <button
+                className="secondary"
+                disabled
+                title="Complete this level to unlock the next level"
+                style={{ padding: '6px 12px', fontSize: '0.85rem', opacity: 0.5, cursor: 'not-allowed' }}
+              >
+                Next 🔒
+              </button>
+            )
           )}
         </div>
       </div>

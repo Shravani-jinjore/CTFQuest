@@ -113,6 +113,21 @@ button.danger { background: transparent; border: 1px solid var(--bad); color: va
 .pill.medium { background: rgba(255,184,77,.15); color: var(--warn); }
 .pill.hard { background: rgba(255,107,129,.15); color: var(--bad); }
 .pill.xp { background: rgba(108,140,255,.15); color: var(--accent); }
+.pill.completed { background: rgba(61,220,151,.2); color: var(--good); }
+.pill.locked { background: rgba(138,147,173,.2); color: var(--muted); }
+
+.tile.locked {
+  opacity: 0.58;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.tile.locked:hover {
+  transform: none;
+  border-color: var(--border);
+}
+.tile.completed {
+  border-color: rgba(61,220,151,.4);
+}
 
 /* ---------- Dashboard ---------- */
 .stats { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 18px; }

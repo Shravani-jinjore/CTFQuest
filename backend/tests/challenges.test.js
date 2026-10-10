@@ -98,3 +98,75 @@ test('a normal user cannot use admin routes', async () => {
     .send({});
   expect(res.status).toBe(403);
 });
+
+test('next level cannot be accessed or submitted unless prelevel is completed', async () => {
+  const FLAG2 = 'CTFQUEST{jest_flag_2}';
+  const [result2] = await pool.query(
+    `INSERT INTO challenges (category_id, title, description, difficulty, xp_reward, flag_hash)
+     SELECT category_id, 'jest_level_2', 'test 2', 'medium', 60, ? FROM challenges WHERE id = ?`,
+    [crypto.createHash('sha256').update(FLAG2).digest('hex'), challengeId]
+  );
+  const challengeId2 = result2.insertId;
+
+  // Create a brand new user who has NOT completed challengeId (level 1)
+  const newUser = {
+    username: `jest_fresh_${Date.now()}`,
+    email: `jest_fresh_${Date.now()}@example.com`,
+    password: 'password1234',
+  };
+  await request(app).post('/api/auth/register').send(newUser);
+  const loginRes = await request(app).post('/api/auth/login').send({
+    email: newUser.email,
+    password: newUser.password,
+  });
+  const freshToken = loginRes.body.token;
+  const freshUserId = loginRes.body.user.id;
+
+  try {
+    // 1. Fresh user views challenge 2 -> should be locked
+    const viewRes = await request(app)
+      .get(`/api/challenges/${challengeId2}`)
+      .set('Authorization', `Bearer ${freshToken}`);
+    expect(viewRes.status).toBe(200);
+    expect(viewRes.body.locked).toBe(true);
+
+    // 2. Fresh user tries to submit to challenge 2 before completing challenge 1 -> 403 Forbidden
+    const subRes = await request(app)
+      .post(`/api/challenges/${challengeId2}/submit`)
+      .set('Authorization', `Bearer ${freshToken}`)
+      .send({ flag: FLAG2 });
+    expect(subRes.status).toBe(403);
+    expect(subRes.body.error).toContain('Level locked');
+
+    // 3. Fresh user completes prelevel (challenge 1)
+    const solve1 = await request(app)
+      .post(`/api/challenges/${challengeId}/submit`)
+      .set('Authorization', `Bearer ${freshToken}`)
+      .send({ flag: FLAG });
+    expect(solve1.status).toBe(200);
+    expect(solve1.body.correct).toBe(true);
+
+    // 4. Now challenge 2 is unlocked
+    const viewResAfter = await request(app)
+      .get(`/api/challenges/${challengeId2}`)
+      .set('Authorization', `Bearer ${freshToken}`);
+    expect(viewResAfter.status).toBe(200);
+    expect(viewResAfter.body.locked).toBe(false);
+
+    // 5. Now fresh user can submit to challenge 2
+    const solve2 = await request(app)
+      .post(`/api/challenges/${challengeId2}/submit`)
+      .set('Authorization', `Bearer ${freshToken}`)
+      .send({ flag: FLAG2 });
+    expect(solve2.status).toBe(200);
+    expect(solve2.body.correct).toBe(true);
+  } finally {
+    await pool.query('DELETE FROM user_badges WHERE user_id = ?', [freshUserId]);
+    await pool.query('DELETE FROM completions WHERE challenge_id = ?', [challengeId2]);
+    await pool.query('DELETE FROM attempts WHERE challenge_id = ?', [challengeId2]);
+    await pool.query('DELETE FROM challenges WHERE id = ?', [challengeId2]);
+    await pool.query('DELETE FROM completions WHERE user_id = ?', [freshUserId]);
+    await pool.query('DELETE FROM attempts WHERE user_id = ?', [freshUserId]);
+    await pool.query('DELETE FROM users WHERE id = ?', [freshUserId]);
+  }
+});
