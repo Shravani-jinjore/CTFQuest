@@ -14,6 +14,7 @@ services:
       - ctfquest-mysql-data:/var/lib/mysql
       - ./backend/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./backend/sql/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      - ./backend/sql/learning_content.sql:/docker-entrypoint-initdb.d/03-learning.sql:ro
 
 volumes:
   ctfquest-mysql-data:
