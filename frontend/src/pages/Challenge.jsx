@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import TerminalView from './TerminalView';
+import TuxCelebration from '../components/TuxCelebration';
 
 const API_URL = 'http://localhost:5000';
 const CATEGORY_NAMES = { 1: 'Linux', 2: 'Git', 3: 'Docker' };
@@ -22,11 +23,13 @@ function Challenge() {
   const [prevId, setPrevId] = useState(null);
   const [nextChallenge, setNextChallenge] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [celebration, setCelebration] = useState(null);
 
   useEffect(() => {
     setSolved(false);
     setMessage('');
     setFlag('');
+    setCelebration(null);
     setSession(0);
     setEnvMessage('Initializing terminal environment...');
 
@@ -220,12 +223,14 @@ function Challenge() {
         setMessage(successMsg);
         setSolved(true);
 
-        // Auto-advance to next challenge without manual actions
-        if (nextId) {
-          setTimeout(() => {
-            navigate(`/challenges/${nextId}`);
-          }, 1800);
-        }
+        // Trigger cute Tux celebration popup!
+        setCelebration({
+          challengeTitle: challenge?.title || `Level #${id}`,
+          xpAwarded: data.xp_awarded,
+          badgesEarned: data.badges_earned || [],
+          nextId: nextId,
+          nextTitle: nextChallenge ? nextChallenge.title : null,
+        });
       } else {
         setMessage(data.message || 'Wrong flag. Keep trying!');
       }
@@ -331,6 +336,17 @@ function Challenge() {
 
   return (
     <div>
+      {celebration && (
+        <TuxCelebration
+          challengeTitle={celebration.challengeTitle}
+          xpAwarded={celebration.xpAwarded}
+          badgesEarned={celebration.badgesEarned}
+          nextId={celebration.nextId}
+          nextTitle={celebration.nextTitle}
+          onClose={() => setCelebration(null)}
+        />
+      )}
+
       {/* Top Header & Navigation Bar */}
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
