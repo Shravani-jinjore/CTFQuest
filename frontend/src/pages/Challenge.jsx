@@ -3,6 +3,8 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import TerminalView from './TerminalView';
 
 const API_URL = 'http://localhost:5000';
+const CATEGORY_NAMES = { 1: 'Linux', 2: 'Git', 3: 'Docker' };
+const CATEGORY_ICONS = { 1: '🐧', 2: '🌿', 3: '🐳' };
 
 function Challenge() {
   const { id } = useParams();
@@ -19,6 +21,7 @@ function Challenge() {
   const [nextId, setNextId] = useState(null);
   const [prevId, setPrevId] = useState(null);
   const [nextChallenge, setNextChallenge] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setSolved(false);
@@ -70,7 +73,7 @@ function Challenge() {
               if (isMounted) setEnvMessage('Could not reach backend to start terminal.');
             });
         } else {
-          setEnvMessage('Log in to launch the terminal environment.');
+          setEnvMessage('Log in to launch the private terminal environment.');
         }
       })
       .catch(() => {
@@ -140,7 +143,7 @@ function Challenge() {
   async function handleStart() {
     if (challenge?.locked) return;
     setSession(0);
-    setEnvMessage('Starting terminal...');
+    setEnvMessage('Starting terminal container...');
     if (await callEnv('start')) {
       setSession(Date.now());
       setEnvMessage('');
@@ -150,7 +153,7 @@ function Challenge() {
   async function handleStop() {
     setSession(0);
     await callEnv('stop');
-    setEnvMessage('Terminal stopped.');
+    setEnvMessage('Terminal container stopped.');
   }
 
   async function handleStuck() {
@@ -195,6 +198,7 @@ function Challenge() {
       return;
     }
 
+    setSubmitting(true);
     try {
       const response = await fetch(`${API_URL}/api/challenges/${id}/submit`, {
         method: 'POST',
@@ -210,9 +214,9 @@ function Challenge() {
         }
       } else if (data.correct) {
         const badgeText = data.badges_earned && data.badges_earned.length
-          ? ` 🏆 New badge: ${data.badges_earned.join(', ')}!`
+          ? ` 🏆 New badge earned: ${data.badges_earned.join(', ')}!`
           : '';
-        const successMsg = `🎉 Correct! You earned ${data.xp_awarded} XP!${badgeText}`;
+        const successMsg = `🎉 Correct flag! You earned ${data.xp_awarded} XP!${badgeText}`;
         setMessage(successMsg);
         setSolved(true);
 
@@ -223,50 +227,96 @@ function Challenge() {
           }, 1800);
         }
       } else {
-        setMessage(data.message || 'Wrong flag. Try again!');
+        setMessage(data.message || 'Wrong flag. Keep trying!');
       }
     } catch {
       setMessage('Could not reach the server.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  if (error) return <p>{error}</p>;
-  if (!challenge) return <p>Loading challenge...</p>;
+  if (error) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <p style={{ fontSize: '2.5rem', marginBottom: '8px' }}>⚠️</p>
+        <h2>Challenge Not Found</h2>
+        <p className="muted">{error}</p>
+        <Link to="/challenges"><button className="secondary">← Back to All Challenges</button></Link>
+      </div>
+    );
+  }
 
+  if (!challenge) {
+    return <p className="muted" style={{ padding: '40px 0' }}>Loading challenge environment...</p>;
+  }
+
+  // Locked Screen
   if (challenge.locked) {
     return (
       <div>
-        <div className="row" style={{ justifyContent: 'space-between', marginBottom: '14px' }}>
-          <p style={{ margin: 0 }}><Link to="/challenges">← All challenges</Link></p>
+        <div className="row" style={{ justifyContent: 'space-between', marginBottom: '18px' }}>
+          <p style={{ margin: 0 }}>
+            <Link to="/challenges" style={{ color: 'var(--text-muted)' }}>← All Challenges</Link>
+          </p>
           <div className="row" style={{ gap: '8px' }}>
             {prevId && (
               <Link to={`/challenges/${prevId}`}>
-                <button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>← Prev</button>
+                <button className="secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
+                  ← Previous Level (#{prevId})
+                </button>
               </Link>
             )}
           </div>
         </div>
 
-        <div className="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '14px' }}>🔒</div>
-          <h2>Level Locked</h2>
-          <p className="muted" style={{ maxWidth: '520px', margin: '0 auto 20px', fontSize: '1.05rem', lineHeight: 1.6 }}>
-            This level cannot be opened yet! You must complete the previous level
+        <div className="card" style={{
+          textAlign: 'center',
+          padding: '60px 24px',
+          background: 'linear-gradient(180deg, rgba(15, 20, 32, 0.9) 0%, rgba(10, 14, 24, 0.95) 100%)',
+          borderColor: 'rgba(255, 255, 255, 0.12)'
+        }}>
+          <div style={{
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 20px',
+            borderRadius: '24px',
+            background: 'rgba(244, 63, 94, 0.12)',
+            border: '1px solid rgba(244, 63, 94, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '2.5rem',
+            boxShadow: '0 0 32px var(--bad-glow)'
+          }}>
+            🔒
+          </div>
+
+          <span className="pill locked" style={{ marginBottom: '14px' }}>Level #{challenge.id} Locked</span>
+          <h2 style={{ fontSize: '2rem', marginBottom: '12px' }}>{challenge.title}</h2>
+          <p className="muted" style={{ maxWidth: '540px', margin: '0 auto 28px', fontSize: '1.05rem', lineHeight: 1.7 }}>
+            This level cannot be opened yet. In accordance with the CTFQuest progressive arena rules,
+            you must complete the previous level{' '}
             {challenge.prev_title ? (
-              <strong> &ldquo;{challenge.prev_title}&rdquo; </strong>
+              <strong style={{ color: '#fff' }}>&ldquo;{challenge.prev_title}&rdquo;</strong>
             ) : (
-              ' '
-            )}
-            first before this challenge will unlock.
+              'first'
+            )}{' '}
+            before this challenge unlocks.
           </p>
-          <div className="row" style={{ justifyContent: 'center', gap: '12px' }}>
+
+          <div className="row" style={{ justifyContent: 'center', gap: '14px' }}>
             {challenge.prev_id && (
               <Link to={`/challenges/${challenge.prev_id}`}>
-                <button>Go to Previous Level ({challenge.prev_title || '#' + challenge.prev_id}) →</button>
+                <button style={{ padding: '12px 26px' }}>
+                  Go to Level #{challenge.prev_id}: {challenge.prev_title || 'Previous'} →
+                </button>
               </Link>
             )}
             <Link to="/challenges">
-              <button className="secondary">View All Challenges</button>
+              <button className="secondary" style={{ padding: '12px 22px' }}>
+                View All Challenges
+              </button>
             </Link>
           </div>
         </div>
@@ -276,24 +326,43 @@ function Challenge() {
 
   const running = session > 0;
   const isNextUnlocked = Boolean(solved || challenge.completed || (nextChallenge && !nextChallenge.locked));
+  const categoryName = CATEGORY_NAMES[challenge.category_id] || 'Linux';
+  const categoryIcon = CATEGORY_ICONS[challenge.category_id] || '🚩';
 
   return (
     <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: '14px' }}>
-        <p style={{ margin: 0 }}><Link to="/challenges">← All challenges</Link></p>
+      {/* Top Header & Navigation Bar */}
+      <div className="row" style={{ justifyContent: 'space-between', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+          <Link to="/challenges" style={{ color: 'var(--text-muted)' }}>← All Challenges</Link>
+          <span style={{ color: 'var(--text-dim)' }}>/</span>
+          <span style={{ color: 'var(--text-dim)' }}>{categoryIcon} {categoryName}</span>
+          <span style={{ color: 'var(--text-dim)' }}>/</span>
+          <span style={{ color: '#fff', fontWeight: 600 }}>Level #{challenge.id}</span>
+        </div>
+
         <div className="row" style={{ gap: '8px' }}>
           {prevId && (
-            <Link to={`/challenges/${prevId}`}><button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>← Prev</button></Link>
+            <Link to={`/challenges/${prevId}`}>
+              <button className="secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
+                ← Prev (#{prevId})
+              </button>
+            </Link>
           )}
+
           {nextId && (
             isNextUnlocked ? (
-              <Link to={`/challenges/${nextId}`}><button className="secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }}>Next →</button></Link>
+              <Link to={`/challenges/${nextId}`}>
+                <button className="secondary" style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
+                  Next (#{nextId}) →
+                </button>
+              </Link>
             ) : (
               <button
                 className="secondary"
                 disabled
                 title="Complete this level to unlock the next level"
-                style={{ padding: '6px 12px', fontSize: '0.85rem', opacity: 0.5, cursor: 'not-allowed' }}
+                style={{ padding: '6px 14px', fontSize: '0.85rem', opacity: 0.5, cursor: 'not-allowed' }}
               >
                 Next 🔒
               </button>
@@ -302,85 +371,222 @@ function Challenge() {
         </div>
       </div>
 
+      {/* Challenge Mission Briefing */}
       <div className="card">
-        <h2>{challenge.title}</h2>
-        <p className="muted">{challenge.difficulty} · {challenge.xp_reward} XP</p>
-        <p>{challenge.description}</p>
+        <div className="tile-top-row" style={{ marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className="pill category">{categoryIcon} {categoryName}</span>
+            <span className={`pill ${challenge.difficulty}`}>{challenge.difficulty}</span>
+            <span className="pill xp">+{challenge.xp_reward} XP</span>
+          </div>
+          {solved && (
+            <span className="pill completed" style={{ fontSize: '0.8rem' }}>
+              ✓ Solved
+            </span>
+          )}
+        </div>
+
+        <h2 style={{ fontSize: '2rem', marginBottom: '10px' }}>
+          Level #{challenge.id}: {challenge.title}
+        </h2>
+        <p style={{ color: '#cbd5e1', fontSize: '1.05rem', lineHeight: 1.7, margin: 0 }}>
+          {challenge.description}
+        </p>
       </div>
 
+      {/* Completion Banner */}
       {solved && (
-        <div className="card" style={{ borderColor: 'var(--good)', background: 'rgba(61, 220, 151, 0.08)' }}>
-          <h3 style={{ color: 'var(--good)' }}>🎉 Level Completed!</h3>
-          <p>{message}</p>
+        <div className="card" style={{
+          borderColor: 'var(--good)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(18, 24, 38, 0.9) 100%)',
+          boxShadow: '0 0 32px var(--good-glow)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '1.8rem' }}>🎉</span>
+            <h3 style={{ color: 'var(--good)', margin: 0, fontSize: '1.35rem' }}>Level Completed!</h3>
+          </div>
+          <p style={{ color: '#f1f5f9', margin: '4px 0 12px' }}>{message}</p>
           {nextId ? (
-            <div className="row" style={{ marginTop: '12px' }}>
+            <div className="row" style={{ marginTop: '14px' }}>
               <p className="muted" style={{ margin: 0 }}>
-                ⚡ Auto-moving to next level...
+                ⚡ Auto-advancing to Level #{nextId}...
               </p>
-              <button onClick={() => navigate(`/challenges/${nextId}`)}>
-                Go to next level now →
+              <button onClick={() => navigate(`/challenges/${nextId}`)} style={{ padding: '8px 20px' }}>
+                Go to Level #{nextId} now →
               </button>
             </div>
           ) : (
-            <div className="row" style={{ marginTop: '12px' }}>
-              <p className="muted" style={{ margin: 0 }}>🏆 Congratulations! You have completed all available levels!</p>
+            <div className="row" style={{ marginTop: '14px' }}>
+              <p className="muted" style={{ margin: 0 }}>🏆 Congratulations! You have completed all 52 available levels!</p>
               <Link to="/dashboard"><button className="secondary">View Dashboard</button></Link>
             </div>
           )}
         </div>
       )}
 
-      <div className="card">
-        <div className="row" style={{ justifyContent: 'space-between', marginBottom: '8px' }}>
-          <h3 style={{ margin: 0 }}>Terminal Environment</h3>
+      {/* Terminal Workspace Frame */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="terminal-titlebar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="window-dots">
+              <div className="window-dot red" />
+              <div className="window-dot yellow" />
+              <div className="window-dot green" />
+            </div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+              terminal@ctfquest:~ (level-{challenge.id})
+            </span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.75rem',
+              color: running ? '#10b981' : 'var(--text-dim)'
+            }}>
+              <span style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                background: running ? '#10b981' : 'var(--text-dim)',
+                boxShadow: running ? '0 0 8px #10b981' : 'none',
+                display: 'inline-block'
+              }} />
+              {running ? 'Running' : 'Idle'}
+            </div>
+          </div>
+
           <div className="row" style={{ gap: '8px' }}>
-            <button className="secondary" onClick={handleStart} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
+            <button
+              className="secondary"
+              onClick={handleStart}
+              style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+            >
               {running ? 'Restart Terminal' : 'Open Terminal'}
             </button>
             {running && (
-              <button className="danger" onClick={handleStop} style={{ padding: '6px 14px', fontSize: '0.85rem' }}>
+              <button
+                className="danger"
+                onClick={handleStop}
+                style={{ padding: '6px 14px', fontSize: '0.84rem' }}
+              >
                 Stop
               </button>
             )}
           </div>
         </div>
-        {envMessage && <p className="muted" style={{ margin: '4px 0 8px' }}>{envMessage}</p>}
-        {running ? (
-          <>
-            <TerminalView key={session} challengeId={id} onAutoSubmit={(f) => handleSubmit(null, f)} />
-            <p className="muted" style={{ marginTop: '8px' }}>
-              💡 Tip: Select text to copy. Ctrl+V pastes. You can also type <code>submit CTFQUEST&#123;...&#125;</code> inside the terminal!
-            </p>
-          </>
-        ) : (
-          <p className="muted">Terminal is currently idle. Click "Open Terminal" or wait for it to load.</p>
+
+        {envMessage && (
+          <div style={{ padding: '10px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            {envMessage}
+          </div>
         )}
+
+        <div className="terminal-box">
+          {running ? (
+            <TerminalView key={session} challengeId={id} onAutoSubmit={(f) => handleSubmit(null, f)} />
+          ) : (
+            <div style={{
+              padding: '60px 20px',
+              textAlign: 'center',
+              color: 'var(--text-dim)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.9rem'
+            }}>
+              <p style={{ fontSize: '2rem', marginBottom: '12px' }}>🖥️</p>
+              <p style={{ color: 'var(--text-muted)', marginBottom: '16px' }}>Terminal container is currently idle.</p>
+              <button onClick={handleStart} style={{ padding: '8px 20px' }}>
+                Launch Terminal Environment
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="terminal-tips-bar">
+          <div>
+            💡 <strong style={{ color: '#fff' }}>Pro-tip:</strong> Selecting text auto-copies • <kbd style={{ padding: '2px 5px', background: 'rgba(255,255,255,0.1)', borderRadius: 4 }}>Ctrl+V</kbd> pastes
+          </div>
+          <div>
+            You can type <code style={{ color: '#38bdf8' }}>submit CTFQUEST&#123;...&#125;</code> inside the terminal!
+          </div>
+        </div>
       </div>
 
+      {/* Flag Submission Card */}
       <div className="card">
-        <h3>Submit Flag</h3>
+        <h3 style={{ marginBottom: '8px' }}>Submit Captured Flag</h3>
+        <p className="muted" style={{ marginBottom: '16px' }}>
+          Enter the flag discovered from the terminal environment (format: <code>CTFQUEST&#123;...&#125;</code>).
+        </p>
+
         <form onSubmit={(e) => handleSubmit(e)} className="row">
           <input
+            style={{ fontFamily: 'var(--font-mono)' }}
             placeholder="CTFQUEST{...}"
             value={flag}
             onChange={(e) => setFlag(e.target.value)}
+            disabled={submitting}
           />
-          <button type="submit">Submit Flag</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? 'Verifying...' : 'Submit Flag →'}
+          </button>
         </form>
-        {message && !solved && <p style={{ marginTop: '8px', color: 'var(--warn)' }}>{message}</p>}
+
+        {message && !solved && (
+          <div style={{
+            marginTop: '14px',
+            padding: '10px 16px',
+            borderRadius: '8px',
+            background: 'rgba(245, 158, 11, 0.12)',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            color: '#fbbf24',
+            fontSize: '0.9rem'
+          }}>
+            {message}
+          </div>
+        )}
       </div>
 
+      {/* Hints Card */}
       <div className="card">
-        <h3>Need a Hint?</h3>
-        <p className="muted">Each hint reduces the XP reward by 10%.</p>
-        <button className="secondary" onClick={handleStuck}>Get Hint</button>
-        {hintMessage && <p style={{ marginTop: '8px' }}>{hintMessage}</p>}
+        <div className="tile-top-row" style={{ marginBottom: '6px' }}>
+          <h3 style={{ margin: 0 }}>Need a Hint?</h3>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+            Each hint reduces final reward by 10%
+          </span>
+        </div>
+        <p className="muted">
+          Stuck on a command or concept? Hints reveal step-by-step guidance without giving away the full answer immediately.
+        </p>
+
+        <button className="secondary" onClick={handleStuck} style={{ padding: '8px 18px', fontSize: '0.88rem' }}>
+          💡 Get Hint {hints.length > 0 ? `(${hints.length} unlocked)` : ''}
+        </button>
+
+        {hintMessage && (
+          <p style={{ marginTop: '12px', color: 'var(--warn)', fontSize: '0.9rem' }}>{hintMessage}</p>
+        )}
+
         {hints.length > 0 && (
-          <ol style={{ marginTop: '12px' }}>
+          <div style={{ marginTop: '18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {hints.map((h) => (
-              <li key={h.level}><strong>Hint {h.level}:</strong> {h.content}</li>
+              <div
+                key={h.level}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '10px',
+                  padding: '14px 18px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span className="pill xp" style={{ fontSize: '0.7rem' }}>Hint #{h.level}</span>
+                </div>
+                <div style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: 1.6 }}>
+                  {h.content}
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
         )}
       </div>
     </div>
