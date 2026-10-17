@@ -53,14 +53,15 @@ function Login({ setUser }) {
       <form onSubmit={handleSubmit}>
         <div>
           <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
-            EMAIL ADDRESS
+            EMAIL OR USERNAME
           </label>
           <input
-            type="email"
-            placeholder="you@example.com"
+            type="text"
+            placeholder="you@example.com or username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="username"
           />
         </div>
 

@@ -37,16 +37,17 @@ router.post('/register', authLimiter, async (req, res) => {
 });
 
 router.post('/login', authLimiter, async (req, res) => {
-  const { email, password } = req.body;
+  const { email, username, identifier, password } = req.body;
+  const loginId = (email || username || identifier || '').trim();
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'email and password are required' });
+  if (!loginId || !password) {
+    return res.status(400).json({ error: 'email or username and password are required' });
   }
 
   try {
     const [rows] = await pool.query(
-      'SELECT id, username, password_hash, role FROM users WHERE email = ?',
-      [email]
+      'SELECT id, username, password_hash, role FROM users WHERE email = ? OR username = ?',
+      [loginId, loginId]
     );
     const user = rows[0];
 
