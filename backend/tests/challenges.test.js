@@ -153,13 +153,15 @@ test('next level cannot be accessed or submitted unless prelevel is completed', 
     expect(viewResAfter.status).toBe(200);
     expect(viewResAfter.body.locked).toBe(false);
 
-    // 5. Now fresh user can submit to challenge 2
+    // 5. Now fresh user can submit to challenge 2 (which has no prior solvers -> first blood)
     const solve2 = await request(app)
       .post(`/api/challenges/${challengeId2}/submit`)
       .set('Authorization', `Bearer ${freshToken}`)
       .send({ flag: FLAG2 });
     expect(solve2.status).toBe(200);
     expect(solve2.body.correct).toBe(true);
+    expect(solve2.body.first_blood).toBe(true);
+    expect(solve2.body.badges_earned).toContain('First Blood');
   } finally {
     await pool.query('DELETE FROM user_badges WHERE user_id = ?', [freshUserId]);
     await pool.query('DELETE FROM completions WHERE challenge_id = ?', [challengeId2]);

@@ -239,6 +239,16 @@ function Challenges() {
               <div className="icon">{c.completed ? '✅' : isCurrentActive ? '🔥' : '🚩'}</div>
               <h3>#{c.id} {c.title}</h3>
 
+              {c.first_blood_user ? (
+                <div style={{ fontSize: '0.76rem', color: '#fda4af', margin: '4px 0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>🩸</span> 1st: <strong>@{c.first_blood_user}</strong>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.76rem', color: '#fef08a', margin: '4px 0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>🩸</span> <em>1st Blood Unclaimed</em>
+                </div>
+              )}
+
               <div className="tile-footer">
                 <span className={`pill ${c.difficulty}`}>{c.difficulty}</span>
                 <span className="pill xp">+{c.xp_reward} XP</span>

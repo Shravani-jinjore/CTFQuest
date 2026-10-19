@@ -229,10 +229,11 @@ function Challenge() {
           setSolved(true);
         }
       } else if (data.correct) {
+        const firstBloodText = data.first_blood ? ' 🩸 FIRST BLOOD CLAIMED!' : '';
         const badgeText = data.badges_earned && data.badges_earned.length
           ? ` 🏆 New badge earned: ${data.badges_earned.join(', ')}!`
           : '';
-        const successMsg = `🎉 Correct flag! You earned ${data.xp_awarded} XP!${badgeText}`;
+        const successMsg = `🎉 Correct flag! You earned ${data.xp_awarded} XP!${firstBloodText}${badgeText}`;
         setMessage(successMsg);
         setSolved(true);
 
@@ -240,6 +241,7 @@ function Challenge() {
         setCelebration({
           challengeTitle: challenge?.title || `Level #${id}`,
           xpAwarded: data.xp_awarded,
+          firstBlood: data.first_blood,
           badgesEarned: data.badges_earned || [],
           nextId: nextId,
           nextTitle: nextChallenge ? nextChallenge.title : null,
@@ -353,6 +355,7 @@ function Challenge() {
         <TuxCelebration
           challengeTitle={celebration.challengeTitle}
           xpAwarded={celebration.xpAwarded}
+          firstBlood={celebration.firstBlood}
           badgesEarned={celebration.badgesEarned}
           nextId={celebration.nextId}
           nextTitle={celebration.nextTitle}
@@ -403,10 +406,19 @@ function Challenge() {
       {/* Challenge Mission Briefing */}
       <div className="card">
         <div className="tile-top-row" style={{ marginBottom: '14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <span className="pill category">{categoryIcon} {categoryName}</span>
             <span className={`pill ${challenge.difficulty}`}>{challenge.difficulty}</span>
             <span className="pill xp">+{challenge.xp_reward} XP</span>
+            {challenge.first_blood_user ? (
+              <span className="pill" style={{ background: 'rgba(244, 63, 94, 0.16)', border: '1px solid rgba(244, 63, 94, 0.4)', color: '#fda4af' }}>
+                🩸 1st Blood: @{challenge.first_blood_user}
+              </span>
+            ) : (
+              <span className="pill" style={{ background: 'rgba(251, 191, 36, 0.14)', border: '1px solid rgba(251, 191, 36, 0.35)', color: '#fef08a' }}>
+                🩸 1st Blood Unclaimed!
+              </span>
+            )}
           </div>
           {solved && (
             <span className="pill completed" style={{ fontSize: '0.8rem' }}>

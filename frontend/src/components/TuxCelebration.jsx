@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 function TuxCelebration({
   challengeTitle,
   xpAwarded,
+  firstBlood = false,
   badgesEarned = [],
   nextId,
   nextTitle,
@@ -58,12 +59,16 @@ function TuxCelebration({
         {/* Cute Speech Bubble */}
         <div className="tux-speech-bubble">
           <div className="bubble-header">
-            <span className="bubble-icon">✨</span>
-            <strong>YAY! CORRECT ANSWER!!</strong>
-            <span className="bubble-icon">✨</span>
+            <span className="bubble-icon">{firstBlood ? '🩸' : '✨'}</span>
+            <strong>{firstBlood ? '🩸 FIRST BLOOD CLAIMED!!' : 'YAY! CORRECT ANSWER!!'}</strong>
+            <span className="bubble-icon">{firstBlood ? '🩸' : '✨'}</span>
           </div>
           <p className="bubble-text">
-            Tux is so proud of you! You conquered <strong>{challengeTitle}</strong> like an absolute cybersecurity legend! 🐧💖
+            {firstBlood ? (
+              <>Tux is stunned! You are the <strong>FIRST HACKER EVER</strong> to conquer <strong>{challengeTitle}</strong>! A true trailblazer! 🐧🩸</>
+            ) : (
+              <>Tux is so proud of you! You conquered <strong>{challengeTitle}</strong> like an absolute cybersecurity legend! 🐧💖</>
+            )}
           </p>
           <div className="bubble-tail" />
         </div>
@@ -200,6 +205,12 @@ function TuxCelebration({
 
         {/* Level & Rewards Overview */}
         <div className="tux-rewards-box">
+          {firstBlood && (
+            <div className="reward-badge" style={{ background: 'rgba(244, 63, 94, 0.2)', border: '1px solid #f43f5e', color: '#fda4af' }}>
+              <span className="reward-icon">🩸</span>
+              <span>First Blood!</span>
+            </div>
+          )}
           <div className="reward-badge xp-pill">
             <span className="reward-icon">⚡</span>
             <span>+{xpAwarded} XP Conquered</span>

@@ -57,7 +57,17 @@ const submitLimiter = rateLimit({
 router.get('/', async (req, res) => {
   try {
     const [challenges] = await pool.query(
-      'SELECT id, category_id, title, difficulty, xp_reward FROM challenges ORDER BY id'
+      `SELECT c.id, c.category_id, c.title, c.difficulty, c.xp_reward,
+              (
+                SELECT u.username
+                FROM completions comp
+                JOIN users u ON u.id = comp.user_id
+                WHERE comp.challenge_id = c.id AND comp.is_first_blood = 1
+                ORDER BY comp.id ASC
+                LIMIT 1
+              ) AS first_blood_user
+       FROM challenges c
+       ORDER BY c.id`
     );
     const user = getOptionalUser(req);
     let completedSet = new Set();
@@ -95,7 +105,17 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      'SELECT id, category_id, title, description, difficulty, xp_reward FROM challenges WHERE id = ?',
+      `SELECT c.id, c.category_id, c.title, c.description, c.difficulty, c.xp_reward,
+              (
+                SELECT u.username
+                FROM completions comp
+                JOIN users u ON u.id = comp.user_id
+                WHERE comp.challenge_id = c.id AND comp.is_first_blood = 1
+                ORDER BY comp.id ASC
+                LIMIT 1
+              ) AS first_blood_user
+       FROM challenges c
+       WHERE c.id = ?`,
       [req.params.id]
     );
     if (rows.length === 0) {
@@ -182,10 +202,17 @@ router.post('/:id/submit', requireAuth, submitLimiter, async (req, res) => {
     const hintsUsed = usedRows[0].n;
     const xpAwarded = Math.floor((challenge.xp_reward * (10 - hintsUsed)) / 10);
 
+    // First blood check: see if anyone completed this challenge before
+    const [priorCompletions] = await conn.query(
+      'SELECT id FROM completions WHERE challenge_id = ? LIMIT 1',
+      [challengeId]
+    );
+    const isFirstBlood = priorCompletions.length === 0;
+
     await conn.beginTransaction();
     await conn.query(
-      'INSERT INTO completions (user_id, challenge_id, xp_awarded) VALUES (?, ?, ?)',
-      [userId, challengeId, xpAwarded]
+      'INSERT INTO completions (user_id, challenge_id, xp_awarded, is_first_blood) VALUES (?, ?, ?, ?)',
+      [userId, challengeId, xpAwarded, isFirstBlood]
     );
     await conn.query(
       `UPDATE users SET
@@ -199,12 +226,17 @@ router.post('/:id/submit', requireAuth, submitLimiter, async (req, res) => {
        WHERE id = ?`,
       [xpAwarded, userId]
     );
-    const badgesEarned = await awardBadges(conn, userId, hintsUsed);
+    const badgesEarned = await awardBadges(conn, userId, {
+      hintsUsed,
+      challengeId: Number(challengeId),
+      isFirstBlood,
+    });
     await conn.commit();
 
     res.json({
       correct: true,
       xp_awarded: xpAwarded,
+      first_blood: isFirstBlood,
       hints_used: hintsUsed,
       badges_earned: badgesEarned,
     });

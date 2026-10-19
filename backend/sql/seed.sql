@@ -40,5 +40,14 @@ INSERT IGNORE INTO hints (challenge_id, level, content)
 SELECT id, 5, 'Run: ls -a to list everything, find the hidden secret file, then run: cat .<filename> and submit the text it prints as the flag.' FROM challenges WHERE title = 'Hidden File';
 INSERT IGNORE INTO badges (code, name, description) VALUES
 ('first_solve', 'First Solve', 'Solve your first challenge'),
-('no_hints', 'No Hints', 'Solve a challenge without using any hint'),
-('streak_3', '3-Day Streak', 'Solve challenges 3 days in a row');
+('first_blood', 'First Blood', 'Be the very first player to solve a challenge'),
+('no_hints', 'Pure Hacker', 'Solve a challenge without using any hint'),
+('streak_3', '3-Day Streak', 'Solve challenges 3 days in a row'),
+('streak_7', 'Weekly Grinder', 'Maintain a 7-day solving streak'),
+('linux_pioneer', 'Linux Explorer', 'Solve at least 5 Linux challenges'),
+('linux_master', 'Linux Master', 'Solve at least 10 Linux challenges'),
+('git_apprentice', 'Git Apprentice', 'Solve your first Git challenge'),
+('git_master', 'Git Archaeologist', 'Solve 3 or more Git challenges'),
+('docker_novice', 'Docker Sailor', 'Solve your first Docker challenge'),
+('docker_master', 'Docker Captain', 'Solve 3 or more Docker challenges'),
+('speed_demon', 'Speed Demon', 'Solve a challenge on your very first attempt');

@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS completions (
   user_id INT NOT NULL,
   challenge_id INT NOT NULL,
   xp_awarded INT NOT NULL,
+  is_first_blood BOOLEAN NOT NULL DEFAULT FALSE,
   completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id, challenge_id),
   FOREIGN KEY (user_id) REFERENCES users(id),

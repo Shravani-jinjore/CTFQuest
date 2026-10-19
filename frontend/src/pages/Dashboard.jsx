@@ -3,6 +3,21 @@ import { Link } from 'react-router-dom';
 
 import { API_URL } from '../config';
 
+const BADGE_ICONS = {
+  first_solve: '🎯',
+  first_blood: '🩸',
+  no_hints: '🧠',
+  streak_3: '🔥',
+  streak_7: '⚡',
+  linux_pioneer: '🐧',
+  linux_master: '👑',
+  git_apprentice: '🌿',
+  git_master: '📜',
+  docker_novice: '🐳',
+  docker_master: '⚓',
+  speed_demon: '🚀',
+};
+
 function Dashboard({ user }) {
   const [me, setMe] = useState(user);
   const [badges, setBadges] = useState([]);
@@ -149,7 +164,7 @@ function Dashboard({ user }) {
         <div className="badge-grid">
           {badges.map((b) => (
             <div key={b.code} className={`badge-item ${b.earned ? '' : 'locked'}`}>
-              <span className="emoji">{b.earned ? '🏅' : '🔒'}</span>
+              <span className="emoji">{b.earned ? (BADGE_ICONS[b.code] || '🏅') : '🔒'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
                   <strong style={{ color: b.earned ? '#fff' : 'var(--text-muted)' }}>{b.name}</strong>
