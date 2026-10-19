@@ -12,18 +12,15 @@ import Challenge from './pages/Challenge';
 import Leaderboard from './pages/Leaderboard';
 import Admin from './pages/Admin';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from './config';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(localStorage.getItem('token')));
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     fetch(`${API_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -104,7 +101,9 @@ function App() {
           />
           <Route path="/learn" element={<Categories />} />
           <Route path="/learn/category/:id" element={<Topics />} />
+          <Route path="/categories/:id/topics" element={<Topics />} />
           <Route path="/learn/lesson/:id" element={<Lesson />} />
+          <Route path="/lessons/:id" element={<Lesson />} />
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/challenges/:id" element={<Challenge />} />
           <Route path="/leaderboard" element={<Leaderboard currentUser={user} />} />

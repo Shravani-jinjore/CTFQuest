@@ -3,13 +3,14 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import TerminalView from './TerminalView';
 import TuxCelebration from '../components/TuxCelebration';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
 const CATEGORY_NAMES = { 1: 'Linux', 2: 'Git', 3: 'Docker' };
 const CATEGORY_ICONS = { 1: '🐧', 2: '🌿', 3: '🐳' };
 
 function Challenge() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [currentId, setCurrentId] = useState(id);
   const [challenge, setChallenge] = useState(null);
   const [flag, setFlag] = useState('');
   const [message, setMessage] = useState('');
@@ -17,7 +18,7 @@ function Challenge() {
   const [hints, setHints] = useState([]);
   const [hintMessage, setHintMessage] = useState('');
   const [session, setSession] = useState(0);
-  const [envMessage, setEnvMessage] = useState('');
+  const [envMessage, setEnvMessage] = useState('Initializing terminal environment...');
   const [solved, setSolved] = useState(false);
   const [nextId, setNextId] = useState(null);
   const [prevId, setPrevId] = useState(null);
@@ -25,14 +26,21 @@ function Challenge() {
   const [submitting, setSubmitting] = useState(false);
   const [celebration, setCelebration] = useState(null);
 
-  useEffect(() => {
+  if (currentId !== id) {
+    setCurrentId(id);
     setSolved(false);
     setMessage('');
     setFlag('');
+    setError('');
+    setHints([]);
+    setHintMessage('');
     setCelebration(null);
     setSession(0);
     setEnvMessage('Initializing terminal environment...');
+    setChallenge(null);
+  }
 
+  useEffect(() => {
     let isMounted = true;
     const token = localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -109,12 +117,17 @@ function Challenge() {
           if (isMounted && Array.isArray(data)) setHints(data);
         })
         .catch(() => {});
-    } else {
-      setHints([]);
     }
 
     return () => {
       isMounted = false;
+      if (token) {
+        fetch(`${API_URL}/api/challenges/${id}/stop`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          keepalive: true,
+        }).catch(() => {});
+      }
     };
   }, [id]);
 

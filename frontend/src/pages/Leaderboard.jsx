@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 function Leaderboard({ currentUser }) {

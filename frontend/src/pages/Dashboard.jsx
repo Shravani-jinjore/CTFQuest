@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
 
 function Dashboard({ user }) {
   const [me, setMe] = useState(user);

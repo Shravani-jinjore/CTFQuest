@@ -1486,8 +1486,13 @@ VALUES ({chal['id']}, {lvl}, '{escaped_hint}');
     sql_file.write("\n".join(sql_statements))
     sql_file.close()
 
+    db_user = os.environ.get("DB_USER", "ctfquest")
+    db_pass = os.environ.get("DB_PASSWORD", "")
+    db_name = os.environ.get("DB_NAME", "ctfquest")
+    pass_flag = f"-p'{db_pass}'" if db_pass else ""
+
     try:
-        run_cmd(f"mysql -u ctfquest -p1129 ctfquest < {sql_file.name}")
+        run_cmd(f"mysql -u {db_user} {pass_flag} {db_name} < {sql_file.name}")
         print("MySQL seeding completed successfully.")
     finally:
         os.unlink(sql_file.name)

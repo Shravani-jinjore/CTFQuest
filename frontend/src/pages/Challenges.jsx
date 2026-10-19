@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
 const CATEGORY_NAMES = { 1: 'Linux', 2: 'Git', 3: 'Docker' };
 const CATEGORY_ICONS = { 1: '🐧', 2: '🌿', 3: '🐳' };
 

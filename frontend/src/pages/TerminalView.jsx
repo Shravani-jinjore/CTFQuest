@@ -2,11 +2,16 @@ import { useEffect, useRef } from 'react';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
-const WS_URL = 'ws://localhost:5000/ws/terminal';
+import { WS_URL } from '../config';
 
 function TerminalView({ challengeId, onAutoSubmit }) {
   const boxRef = useRef(null);
   const submittedRef = useRef(new Set());
+  const onAutoSubmitRef = useRef(onAutoSubmit);
+
+  useEffect(() => {
+    onAutoSubmitRef.current = onAutoSubmit;
+  }, [onAutoSubmit]);
 
   useEffect(() => {
     submittedRef.current.clear();
@@ -57,14 +62,14 @@ function TerminalView({ challengeId, onAutoSubmit }) {
       const msg = JSON.parse(event.data);
       if (msg.type === 'output') {
         term.write(msg.data);
-        if (onAutoSubmit && typeof msg.data === 'string') {
+        if (onAutoSubmitRef.current && typeof msg.data === 'string') {
           const match = msg.data.match(/\[CTFQUEST_SUBMIT:(.+?)\]/);
           if (match && match[1]) {
             const rawFlag = match[1].trim();
             if (!submittedRef.current.has(rawFlag)) {
               submittedRef.current.add(rawFlag);
               term.write('\r\n\x1b[33m[CTFQuest] Submitting flag to server...\x1b[0m\r\n');
-              onAutoSubmit(rawFlag);
+              onAutoSubmitRef.current(rawFlag);
             }
           }
         }

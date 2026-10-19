@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-
-const API_URL = 'http://localhost:5000';
+import { useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../config';
 
 function Admin() {
   const [challenges, setChallenges] = useState([]);
@@ -19,16 +18,18 @@ function Admin() {
   const token = localStorage.getItem('token');
   const authHeaders = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
-  function loadChallenges() {
+  const loadChallenges = useCallback(() => {
     fetch(`${API_URL}/api/challenges`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setChallenges(data);
       })
       .catch(() => setMessage('Could not load challenges.'));
-  }
+  }, [token]);
 
-  useEffect(loadChallenges, []);
+  useEffect(() => {
+    loadChallenges();
+  }, [loadChallenges]);
 
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));

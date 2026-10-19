@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
 
 function Login({ setUser }) {
   const [email, setEmail] = useState('');

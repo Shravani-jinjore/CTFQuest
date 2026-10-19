@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost:5000';
+import { API_URL } from '../config';
+
 const TRACK_ICONS = {
   Linux: '🐧',
   Git: '🌿',
@@ -13,20 +14,35 @@ function Lesson() {
   const navigate = useNavigate();
   const [lesson, setLesson] = useState(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loadedId, setLoadedId] = useState(null);
   const [showOutline, setShowOutline] = useState(false);
 
+  const loading = loadedId !== id && !error;
+
   useEffect(() => {
-    setLoading(true);
-    setError('');
+    let ignore = false;
     fetch(`${API_URL}/api/lessons/${id}`)
       .then((res) => {
         if (!res.ok) throw new Error('not found');
         return res.json();
       })
-      .then((data) => setLesson(data))
-      .catch(() => setError('Lesson not found.'))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!ignore) {
+          setLesson(data);
+          setError('');
+          setLoadedId(id);
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setError('Lesson not found.');
+          setLoadedId(id);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -34,9 +50,9 @@ function Lesson() {
       // Don't trigger if user is typing in an input/textarea
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
       if (e.key === 'ArrowRight' && lesson?.next_id) {
-        navigate(`/lessons/${lesson.next_id}`);
+        navigate(`/learn/lesson/${lesson.next_id}`);
       } else if (e.key === 'ArrowLeft' && lesson?.prev_id) {
-        navigate(`/lessons/${lesson.prev_id}`);
+        navigate(`/learn/lesson/${lesson.prev_id}`);
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -72,7 +88,7 @@ function Lesson() {
           <span style={{ color: 'var(--border)' }}>/</span>
           {lesson.category_id && (
             <>
-              <Link to={`/categories/${lesson.category_id}/topics`} style={{ color: 'var(--text-muted)' }}>
+              <Link to={`/learn/category/${lesson.category_id}`} style={{ color: 'var(--text-muted)' }}>
                 {categoryIcon} {lesson.category_name}
               </Link>
               <span style={{ color: 'var(--border)' }}>/</span>
@@ -119,7 +135,7 @@ function Lesson() {
               return (
                 <Link
                   key={item.id}
-                  to={`/lessons/${item.id}`}
+                  to={`/learn/lesson/${item.id}`}
                   style={{ textDecoration: 'none' }}
                   onClick={() => setShowOutline(false)}
                 >
@@ -212,7 +228,7 @@ function Lesson() {
         marginBottom: '40px'
       }}>
         {lesson.prev_id ? (
-          <Link to={`/lessons/${lesson.prev_id}`} style={{ textDecoration: 'none' }}>
+          <Link to={`/learn/lesson/${lesson.prev_id}`} style={{ textDecoration: 'none' }}>
             <button
               className="secondary"
               style={{
@@ -243,7 +259,7 @@ function Lesson() {
         )}
 
         {lesson.next_id ? (
-          <Link to={`/lessons/${lesson.next_id}`} style={{ textDecoration: 'none', marginLeft: 'auto' }}>
+          <Link to={`/learn/lesson/${lesson.next_id}`} style={{ textDecoration: 'none', marginLeft: 'auto' }}>
             <button
               style={{
                 display: 'flex',
