@@ -1,6 +1,4 @@
-// Simulated Interactive Shell Fallback for environments without Docker (e.g., Render, serverless)
-// Allows players to explore the filesystem, run bash commands, and submit flags directly in the browser.
-
+const path = require('path');
 const CHALLENGE_VFS = {
   1: {
     files: {
@@ -281,6 +279,39 @@ function createMockSession(challengeId, ws) {
         else if (char === '\x03') {
           inputBuffer = '';
           sendOutput('^C' + prompt);
+        }
+        // Tab key auto-completion (\t = 0x09)
+        else if (char === '\t' || char === '\x09') {
+          const knownCommands = ['cat', 'clear', 'cd', 'echo', 'find', 'grep', 'help', 'ls', 'pwd', 'submit', 'base64', 'rev', 'whoami', 'id'];
+          const fileList = Object.keys(vfs.files);
+
+          const parts = inputBuffer.split(/\s+/);
+          if (parts.length <= 1) {
+            // Auto-complete command
+            const partial = parts[0] || '';
+            const matches = knownCommands.filter((c) => c.startsWith(partial));
+            if (matches.length === 1) {
+              const completion = matches[0].slice(partial.length) + ' ';
+              inputBuffer += completion;
+              sendOutput(completion);
+            } else if (matches.length > 1) {
+              sendOutput('\r\n' + matches.join('  ') + '\r\n' + prompt + inputBuffer);
+            }
+          } else {
+            // Auto-complete filename argument
+            const partial = parts[parts.length - 1];
+            const cleanPartial = partial.replace(/^\.\//, '');
+            const matches = fileList.filter((f) => f.startsWith(cleanPartial) || path.basename(f).startsWith(cleanPartial));
+
+            if (matches.length === 1) {
+              const full = matches[0];
+              const remainder = full.slice(cleanPartial.length) + ' ';
+              inputBuffer += remainder;
+              sendOutput(remainder);
+            } else if (matches.length > 1) {
+              sendOutput('\r\n' + matches.join('  ') + '\r\n' + prompt + inputBuffer);
+            }
+          }
         }
         // Normal printable characters
         else if (char >= ' ' && char <= '~') {
