@@ -341,8 +341,50 @@ function createMockSession(challengeId, ws) {
     sendOutput(getPrompt());
   }
 
+  const history = [];
+  let historyIndex = -1;
+
+  function replaceInput(newText) {
+    // Erase current input on terminal line
+    sendOutput('\r' + getPrompt().replace(/^\r\n/, '') + '\x1b[K' + newText);
+    inputBuffer = newText;
+  }
+
   return {
     handleInput(data) {
+      // Check for escape sequences
+      if (data.startsWith('\x1b')) {
+        // Up Arrow (\x1b[A) or Page Up (\x1b[5~)
+        if (data === '\x1b[A' || data === '\x1b[5~') {
+          if (history.length > 0) {
+            if (historyIndex === -1) {
+              historyIndex = history.length - 1;
+            } else if (historyIndex > 0) {
+              historyIndex--;
+            }
+            replaceInput(history[historyIndex]);
+          }
+          return;
+        }
+
+        // Down Arrow (\x1b[B) or Page Down (\x1b[6~)
+        if (data === '\x1b[B' || data === '\x1b[6~') {
+          if (historyIndex !== -1) {
+            if (historyIndex < history.length - 1) {
+              historyIndex++;
+              replaceInput(history[historyIndex]);
+            } else {
+              historyIndex = -1;
+              replaceInput('');
+            }
+          }
+          return;
+        }
+
+        // Right arrow / Left arrow / other escapes: ignore for now
+        return;
+      }
+
       for (let i = 0; i < data.length; i++) {
         const char = data[i];
 
@@ -350,6 +392,10 @@ function createMockSession(challengeId, ws) {
         if (char === '\r' || char === '\n') {
           const cmd = inputBuffer;
           inputBuffer = '';
+          if (cmd.trim()) {
+            history.push(cmd.trim());
+          }
+          historyIndex = -1;
           executeCommand(cmd);
         }
         // Backspace
@@ -362,6 +408,7 @@ function createMockSession(challengeId, ws) {
         // Ctrl+C
         else if (char === '\x03') {
           inputBuffer = '';
+          historyIndex = -1;
           sendOutput('^C' + getPrompt());
         }
         // Tab key auto-completion (\t = 0x09)
