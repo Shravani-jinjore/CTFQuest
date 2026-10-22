@@ -13,6 +13,17 @@ function Challenges() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
+  // Dynamic per-category counts from loaded data
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    for (const c of challenges) {
+      const name = (CATEGORY_NAMES[c.category_id] || '').toLowerCase();
+      if (name) counts[name] = (counts[name] || 0) + 1;
+    }
+    return counts;
+  }, [challenges]);
+
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -68,7 +79,7 @@ function Challenges() {
       <div style={{ marginBottom: '24px' }}>
         <h2 className="page-title">Challenge Arena</h2>
         <p className="page-sub">
-          Complete each level to unlock the next quest in sequence. 52 progressive challenges spanning Linux, Git & Docker.
+          Complete each level to unlock the next quest in sequence. {totalChallenges} progressive challenges spanning Linux, Git &amp; Docker.
         </p>
 
         {/* Global Progress Bar Card */}
@@ -132,19 +143,19 @@ function Challenges() {
             className={`filter-tab ${selectedCategory === 'linux' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('linux')}
           >
-            🐧 Linux (43)
+            🐧 Linux ({categoryCounts.linux ?? 0})
           </button>
           <button
             className={`filter-tab ${selectedCategory === 'git' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('git')}
           >
-            🌿 Git (6)
+            🌿 Git ({categoryCounts.git ?? 0})
           </button>
           <button
             className={`filter-tab ${selectedCategory === 'docker' ? 'active' : ''}`}
             onClick={() => setSelectedCategory('docker')}
           >
-            🐳 Docker (3)
+            🐳 Docker ({categoryCounts.docker ?? 0})
           </button>
         </div>
 

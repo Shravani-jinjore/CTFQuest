@@ -3,6 +3,18 @@ const pool = require('../db');
 
 const router = express.Router();
 
+router.get('/categories', async (req, res) => {
+  try {
+    const [categories] = await pool.query(
+      'SELECT id, name FROM categories ORDER BY id'
+    );
+    res.json(categories);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
 router.get('/categories/:id/topics', async (req, res) => {
   try {
     const [topics] = await pool.query(

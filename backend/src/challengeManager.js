@@ -26,23 +26,17 @@ async function startChallenge(userId, challengeId, image) {
   await stopChallenge(userId, challengeId);
   const name = containerName(userId, challengeId);
 
+  // List containers for this user, excluding the one we just stopped
   const running = await docker.listContainers({
     all: true,
     filters: { label: [`ctfquest.user=${userId}`] },
   });
   if (running.length >= MAX_CONTAINERS_PER_USER) {
-    for (const info of running) {
-      try {
-        await docker.getContainer(info.Id).remove({ force: true });
-        const cName = info.Names && info.Names[0] ? info.Names[0].replace(/^\//, '') : '';
-        if (cName) {
-          clearTimeout(timers.get(cName));
-          timers.delete(cName);
-        }
-      } catch (err) {
-        // ignore removal error
-      }
-    }
+    const err = new Error(
+      `You already have ${MAX_CONTAINERS_PER_USER} running challenges. Stop one first.`
+    );
+    err.code = 'LIMIT';
+    throw err;
   }
 
   const container = await docker.createContainer({

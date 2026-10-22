@@ -118,7 +118,7 @@ function Dashboard({ user }) {
         </div>
         <div className="stat">
           <div className="num" style={{ color: '#34d399' }}>
-            {solvedChallenges.length} <span style={{ fontSize: '1.2rem', color: 'var(--text-dim)', fontWeight: 500 }}>/ {challenges.length || 52}</span>
+            {solvedChallenges.length} <span style={{ fontSize: '1.2rem', color: 'var(--text-dim)', fontWeight: 500 }}>/ {challenges.length || '–'}</span>
           </div>
           <div className="label">Levels Conquered</div>
         </div>

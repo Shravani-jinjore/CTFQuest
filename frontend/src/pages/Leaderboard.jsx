@@ -115,7 +115,7 @@ function Leaderboard({ currentUser }) {
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <span className="pill completed" style={{ fontSize: '0.75rem' }}>
-                        {r.solved} / 52
+                    {r.solved}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
