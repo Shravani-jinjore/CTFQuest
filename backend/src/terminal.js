@@ -1,6 +1,7 @@
 const { WebSocketServer } = require('ws');
 const jwt = require('jsonwebtoken');
-const { docker, containerName } = require('./challengeManager');
+const { docker, containerName, checkDocker, activeSessions } = require('./challengeManager');
+const { createMockSession } = require('./mockTerminal');
 
 function send(ws, obj) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(obj));
@@ -16,10 +17,11 @@ function attachTerminal(server) {
   wss.on('connection', (ws) => {
     let stream = null;
     let exec = null;
+    let mockSession = null;
     let authenticating = false;
 
     const authTimer = setTimeout(() => {
-      if (!stream) ws.close(1008, 'auth timeout');
+      if (!stream && !mockSession) ws.close(1008, 'auth timeout');
     }, 5000);
 
     ws.on('error', console.error);
@@ -33,7 +35,7 @@ function attachTerminal(server) {
       }
 
       // Step 1: the first valid message must be "auth"
-      if (!stream) {
+      if (!stream && !mockSession) {
         if (msg.type !== 'auth' || authenticating) return;
         authenticating = true;
 
@@ -42,21 +44,29 @@ function attachTerminal(server) {
           const challengeId = Number(msg.challengeId);
           if (!Number.isInteger(challengeId)) throw new Error('bad challenge id');
 
-          const container = docker.getContainer(containerName(user.id, challengeId));
-          const info = await container.inspect();
-          if (!info.State.Running) throw new Error('challenge is not running');
+          const hasDocker = await checkDocker();
 
-          exec = await container.exec({
-            Cmd: ['/bin/bash'],
-            AttachStdin: true,
-            AttachStdout: true,
-            AttachStderr: true,
-            Tty: true,
-          });
-          stream = await exec.start({ hijack: true, stdin: true, Tty: true });
+          if (hasDocker) {
+            const container = docker.getContainer(containerName(user.id, challengeId));
+            const info = await container.inspect();
+            if (!info.State.Running) throw new Error('challenge is not running');
 
-          stream.on('data', (chunk) => send(ws, { type: 'output', data: chunk.toString() }));
-          stream.on('end', () => ws.close());
+            exec = await container.exec({
+              Cmd: ['/bin/bash'],
+              AttachStdin: true,
+              AttachStdout: true,
+              AttachStderr: true,
+              Tty: true,
+            });
+            stream = await exec.start({ hijack: true, stdin: true, Tty: true });
+
+            stream.on('data', (chunk) => send(ws, { type: 'output', data: chunk.toString() }));
+            stream.on('end', () => ws.close());
+          } else {
+            // Cloud sandbox fallback
+            mockSession = createMockSession(challengeId, ws);
+          }
+
           send(ws, { type: 'ready' });
         } catch (err) {
           authenticating = false;
@@ -68,8 +78,12 @@ function attachTerminal(server) {
 
       // Step 2: after auth, accept input and resize
       if (msg.type === 'input' && typeof msg.data === 'string') {
-        stream.write(msg.data);
-      } else if (msg.type === 'resize') {
+        if (stream) {
+          stream.write(msg.data);
+        } else if (mockSession) {
+          mockSession.handleInput(msg.data);
+        }
+      } else if (msg.type === 'resize' && exec) {
         const cols = Math.min(Math.max(Number(msg.cols) || 80, 1), 500);
         const rows = Math.min(Math.max(Number(msg.rows) || 24, 1), 200);
         exec.resize({ w: cols, h: rows }).catch(() => {});
@@ -79,6 +93,7 @@ function attachTerminal(server) {
     ws.on('close', () => {
       clearTimeout(authTimer);
       if (stream) stream.end();
+      if (mockSession) mockSession.destroy();
     });
   });
 }
