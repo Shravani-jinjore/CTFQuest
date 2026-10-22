@@ -332,11 +332,9 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'challenge not found' });
     }
-    if (!rows[0].docker_image) {
-      return res.status(400).json({ error: 'this challenge has no environment' });
-    }
+    const image = rows[0].docker_image || 'ctfquest/linux-base:latest';
 
-    await startChallenge(req.user.id, req.params.id, rows[0].docker_image);
+    await startChallenge(req.user.id, req.params.id, image);
     res.json({ status: 'running', expires_in_minutes: TIMEOUT_MS / 60000 });
   } catch (err) {
     if (err.code === 'LIMIT') {
