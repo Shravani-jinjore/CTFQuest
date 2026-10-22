@@ -16,9 +16,21 @@ const app = express();
 app.disable('x-powered-by');
 app.use(securityHeaders);
 app.use(cors({
-  origin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
-    : ['http://localhost:5173', 'http://localhost:5174'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    if (!process.env.CORS_ORIGIN || process.env.CORS_ORIGIN === '*') {
+      return callback(null, true);
+    }
+    const allowed = process.env.CORS_ORIGIN.split(',').map((o) => o.trim());
+    if (allowed.includes(origin) || origin.endsWith('.onrender.com')) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Permissive for production deployment
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json({ limit: '10kb' }));
 
