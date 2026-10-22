@@ -27,11 +27,11 @@ services:
       - key: DB_SSL
         value: "true"
 
-  # ==========================================
-  # Frontend React SPA Static Site
-  # ==========================================
-  - type: static
-    name: ctfquest-frontend
+# ==========================================
+# Frontend React SPA Static Site
+# ==========================================
+staticSites:
+  - name: ctfquest-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
