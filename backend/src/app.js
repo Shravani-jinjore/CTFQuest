@@ -32,15 +32,6 @@ app.get('/api/hello/:name', (req, res) => {
   res.json({ greeting: `Hello, ${req.params.name}!` });
 });
 
-app.get('/api/categories', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT id, name FROM categories');
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'server error' });
-  }
-});
 
 app.use('/api/auth', authRoutes);
 app.use('/api', learningRoutes);
