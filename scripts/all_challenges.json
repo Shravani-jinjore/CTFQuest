@@ -1,0 +1,834 @@
+[
+  {
+    "id": 1,
+    "slug": "linux-01-hidden-file",
+    "category": "Linux",
+    "title": "Hidden File",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A secret file is hiding inside your home directory. Regular 'ls' will not show it. Find it, read it, and submit the flag.",
+    "flag": "CTFQUEST{h1dd3n_d0t_f1l3_unc0v3r3d}",
+    "hints": [
+      "In Linux, any filename starting with a dot '.' is considered hidden.",
+      "The 'ls' command has an option to show all files, including hidden ones.",
+      "Run 'ls -a' to see all files, then 'cat' the hidden secret file."
+    ],
+    "setup": "\necho \"$FLAG\" > /home/player/.secret_flag.txt\nchmod 444 /home/player/.secret_flag.txt\n"
+  },
+  {
+    "id": 2,
+    "slug": "linux-02-find-the-file",
+    "category": "Linux",
+    "title": "Find the File",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A file named 'secret.txt' is hidden deep inside nested directories. Use the 'find' command to locate and read it.",
+    "flag": "CTFQUEST{f1nd_c0mm4nd_p4th_tr4v3rs3r}",
+    "hints": [
+      "Manual directory browsing takes too long. Linux provides 'find' for searching recursively.",
+      "Use 'find . -name \"secret.txt\"' to search starting from your current folder.",
+      "Once find prints the path, use 'cat' on that path to read the flag."
+    ],
+    "setup": "\nmkdir -p /home/player/projects/alpha/notes /home/player/projects/beta/archive /home/player/documents\necho \"just notes\" > /home/player/projects/alpha/notes/ideas.txt\necho \"nothing here\" > /home/player/documents/todo.txt\necho \"$FLAG\" > /home/player/projects/beta/archive/secret.txt\nchmod 444 /home/player/projects/beta/archive/secret.txt\n"
+  },
+  {
+    "id": 3,
+    "slug": "linux-03-spaces-in-name",
+    "category": "Linux",
+    "title": "Spaces in the Name",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "The secret file is named 'secret flag file.txt'. In shell commands, spaces separate arguments unless handled properly. Read the file!",
+    "flag": "CTFQUEST{qu0t1ng_sp4c3s_1n_f1l3n4m3s}",
+    "hints": [
+      "Spaces break command line arguments into multiple words.",
+      "You can wrap the entire filename in quotes or escape every space with a backslash.",
+      "Try: cat \"secret flag file.txt\" or cat secret\\ flag\\ file.txt"
+    ],
+    "setup": "\necho \"$FLAG\" > \"/home/player/secret flag file.txt\"\nchmod 444 \"/home/player/secret flag file.txt\"\n"
+  },
+  {
+    "id": 4,
+    "slug": "linux-04-leading-dashes",
+    "category": "Linux",
+    "title": "Leading Dashes",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "There is a file named '--flag.txt' in your home folder. If you run 'cat --flag.txt', cat thinks it is a command-line flag! How can you open it?",
+    "flag": "CTFQUEST{d4sh_f1l3n4m3s_n33d_d0t_sl4sh}",
+    "hints": [
+      "Programs parse arguments starting with '-' as configuration options.",
+      "You can give an explicit relative path using './' to stop option parsing.",
+      "Try: cat ./--flag.txt or cat -- --flag.txt"
+    ],
+    "setup": "\necho \"$FLAG\" > /home/player/--flag.txt\nchmod 444 /home/player/--flag.txt\n"
+  },
+  {
+    "id": 5,
+    "slug": "linux-05-human-readable",
+    "category": "Linux",
+    "title": "Human Readable File",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "The 'data/' directory contains many dummy files. Exactly one file is 1033 bytes in size. Find and read that specific file.",
+    "flag": "CTFQUEST{f1nd_by_s1z3_1033_byt3s}",
+    "hints": [
+      "The 'find' command can filter files by exact byte size.",
+      "Use the '-size' parameter with 'c' to specify size in bytes.",
+      "Try: find data -type f -size 1033c"
+    ],
+    "setup": "\nmkdir -p /home/player/data\nfor i in $(seq 1 20); do\n  head -c $((600 + i * 40)) /dev/urandom | base64 | head -c $((600 + i * 20)) > \"/home/player/data/sample_$i.dat\"\ndone\npython3 -c \"\nimport sys\nflag = sys.argv[1]\npadding = 1033 - len(flag) - 1\nwith open('/home/player/data/target.dat', 'w') as f:\n    f.write(flag + '\\n' + 'X' * padding)\n\" \"$FLAG\"\nchmod -R 444 /home/player/data\n"
+  },
+  {
+    "id": 6,
+    "slug": "linux-06-grep-needle",
+    "category": "Linux",
+    "title": "Needle in a Haystack",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "The file 'haystack.txt' contains thousands of log lines. Exactly one line starts with 'FLAG:'. Use 'grep' to filter out the noise.",
+    "flag": "CTFQUEST{gr3p_1s_4lw4ys_y0ur_fr13nd}",
+    "hints": [
+      "Don't read the whole file manually. Use 'grep' to search text.",
+      "Look for lines matching the pattern 'FLAG:'.",
+      "Try: grep \"FLAG:\" haystack.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/haystack.txt', 'w') as f:\n    for i in range(1, 3001):\n        if i == 1729:\n            f.write(f'FLAG: {flag}\\n')\n        else:\n            f.write(f'LOG_ENTRY {i:04d}: status=ok code=0 hash=0x{i*31:08x}\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/haystack.txt\n"
+  },
+  {
+    "id": 7,
+    "slug": "linux-07-unique-line",
+    "category": "Linux",
+    "title": "Unique Occurrence",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "In 'items.txt', every line is repeated multiple times, except for one unique line which contains the flag. Find the line that appears only once.",
+    "flag": "CTFQUEST{un1qu3_l1n3s_w1th_s0rt_un1q}",
+    "hints": [
+      "The 'uniq' command filters duplicate lines, but requires sorted input.",
+      "Pipe the sorted file into 'uniq -u' to display only unique lines.",
+      "Try: sort items.txt | uniq -u"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/items.txt', 'w') as f:\n    items = ['kernel_panic', 'segmentation_fault', 'null_pointer', 'stack_overflow', 'buffer_underrun']\n    for item in items:\n        for _ in range(7):\n            f.write(f'{item}\\n')\n    f.write(f'{flag}\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/items.txt\n"
+  },
+  {
+    "id": 8,
+    "slug": "linux-08-case-hunt",
+    "category": "Linux",
+    "title": "Case Insensitive Search",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A secret key was logged in 'log.txt', but the letters have mixed casing (like 'sEcReT_kEy'). Search without worrying about case.",
+    "flag": "CTFQUEST{c4s3_1ns3ns1t1v3_gr3p_m4st3r}",
+    "hints": [
+      "By default, grep is case-sensitive.",
+      "The '-i' flag tells grep to ignore case distinctions.",
+      "Try: grep -i \"secret_key\" log.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/log.txt', 'w') as f:\n    for i in range(1, 100):\n        f.write(f'Host node-{i:02d} heartbeat healthy\\n')\n    f.write(f'sEcReT_kEy={flag}\\n')\n    for i in range(101, 200):\n        f.write(f'Host node-{i:02d} heartbeat healthy\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/log.txt\n"
+  },
+  {
+    "id": 9,
+    "slug": "linux-09-line-counting",
+    "category": "Linux",
+    "title": "Line Counting & Extraction",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "The file 'entries.txt' has 5,000 lines. The flag is located exactly at line number 2450. Extract that exact line.",
+    "flag": "CTFQUEST{s3d_pr1nt_sp3c1f1c_l1n3_2450}",
+    "hints": [
+      "You can use 'sed' to print a specific line number.",
+      "Or combine 'head' and 'tail' to view a slice.",
+      "Try: sed -n '2450p' entries.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/entries.txt', 'w') as f:\n    for i in range(1, 5001):\n        if i == 2450:\n            f.write(f'{flag}\\n')\n        else:\n            f.write(f'Entry number {i} data record\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/entries.txt\n"
+  },
+  {
+    "id": 10,
+    "slug": "linux-10-invert-search",
+    "category": "Linux",
+    "title": "Invert Search",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "'system.log' is overwhelmed with normal heartbeats tagged '[NORMAL]'. Exactly one line has an anomaly that does NOT contain '[NORMAL]'. Filter out the normal lines!",
+    "flag": "CTFQUEST{1nv3rt_m4tch_gr3p_v_fl4g}",
+    "hints": [
+      "You want to invert the search to match lines that do NOT contain a pattern.",
+      "The '-v' flag in grep inverts the match.",
+      "Try: grep -v \"\\[NORMAL\\]\" system.log"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/system.log', 'w') as f:\n    for i in range(1, 1500):\n        if i == 842:\n            f.write(f'[SECURITY_ALERT] {flag}\\n')\n        else:\n            f.write(f'[NORMAL] metric check {i} passed\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/system.log\n"
+  },
+  {
+    "id": 11,
+    "slug": "linux-11-run-the-script",
+    "category": "Linux",
+    "title": "Run the Script",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "There is a script called 'reveal.sh' in your home directory, but its execute permission is missing. Run it to get the flag.",
+    "flag": "CTFQUEST{3x3cut3_p3rm1ss10n_b4sh_run}",
+    "hints": [
+      "A script cannot be executed directly without '+x' permission.",
+      "You can grant execute permission using 'chmod +x', or pass it directly to an interpreter like 'bash'.",
+      "Try: bash reveal.sh or chmod +x reveal.sh && ./reveal.sh"
+    ],
+    "setup": "\nprintf '#!/bin/bash\\necho \"%s\"\\n' \"$FLAG\" > /home/player/reveal.sh\nchmod 644 /home/player/reveal.sh\n"
+  },
+  {
+    "id": 12,
+    "slug": "linux-12-env-hunt",
+    "category": "Linux",
+    "title": "Environment Variable Hunt",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A secret access key is stored in an environment variable named 'VAULT_ACCESS_TOKEN'. Read it from your shell environment.",
+    "flag": "CTFQUEST{3nv_v4rs_4r3_3v3ryw3r3}",
+    "hints": [
+      "Environment variables are available to all running processes.",
+      "You can view environment variables using 'env' or echo the specific variable.",
+      "Try: echo $VAULT_ACCESS_TOKEN or env | grep VAULT"
+    ],
+    "setup": "\necho \"export VAULT_ACCESS_TOKEN=\"$FLAG\"\" >> /home/player/.bashrc\n"
+  },
+  {
+    "id": 13,
+    "slug": "linux-13-bash-history",
+    "category": "Linux",
+    "title": "Bash History Secrets",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "An operator typed a secret command into this terminal session in the past. Find what they typed in their bash history.",
+    "flag": "CTFQUEST{b4sh_h1st0ry_l34ks_s3cr3ts}",
+    "hints": [
+      "Bash saves executed commands to a history file in the user's home folder.",
+      "Check for '.bash_history'.",
+      "Try: cat ~/.bash_history"
+    ],
+    "setup": "\nprintf 'ls -la\\ncd /var/log\\ngrep -i alert syslog\\nexport SECRET_TOKEN=\"%s\"\\nexit\\n' \"$FLAG\" > /home/player/.bash_history\nchmod 644 /home/player/.bash_history\n"
+  },
+  {
+    "id": 14,
+    "slug": "linux-14-suid-binary",
+    "category": "Linux",
+    "title": "SUID Binary Privilege",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "The secret file '/root/secret/flag.txt' is readable only by root. However, an administrative binary '/usr/local/bin/readflag' has the SUID bit set. Use it!",
+    "flag": "CTFQUEST{su1d_b1t_pr1v1l3g3_3sc4l4t10n}",
+    "hints": [
+      "SUID (Set User ID) binaries run with the permissions of the file owner (root).",
+      "You can find SUID binaries with 'find / -perm -4000 2>/dev/null'.",
+      "Run '/usr/local/bin/readflag' directly."
+    ],
+    "setup": "\nmkdir -p /root/secret\necho \"$FLAG\" > /root/secret/flag.txt\nchmod 400 /root/secret/flag.txt\ncat << 'EOF' > /tmp/readflag.c\n#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\nint main() {\n    setuid(0);\n    FILE *f = fopen(\"/root/secret/flag.txt\", \"r\");\n    if (!f) { perror(\"fopen\"); return 1; }\n    char buf[256];\n    if (fgets(buf, sizeof(buf), f)) printf(\"%s\", buf);\n    fclose(f);\n    return 0;\n}\nEOF\ngcc /tmp/readflag.c -o /usr/local/bin/readflag\nrm -f /tmp/readflag.c\nchmod 4755 /usr/local/bin/readflag\n"
+  },
+  {
+    "id": 15,
+    "slug": "linux-15-group-access",
+    "category": "Linux",
+    "title": "Group Permissions",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "A protected file '/opt/classified/secret.txt' belongs to the 'operators' group. Check if your user is a member of this group and read the file.",
+    "flag": "CTFQUEST{l1nux_gr0up_p3rm1ss10ns_0k}",
+    "hints": [
+      "Check which groups you belong to with 'id' or 'groups'.",
+      "Examine file permissions with 'ls -l /opt/classified/secret.txt'.",
+      "Read the file with 'cat /opt/classified/secret.txt'."
+    ],
+    "setup": "\ngroupadd operators\nusermod -aG operators player\nmkdir -p /opt/classified\necho \"$FLAG\" > /opt/classified/secret.txt\nchown root:operators /opt/classified/secret.txt\nchmod 440 /opt/classified/secret.txt\n"
+  },
+  {
+    "id": 16,
+    "slug": "linux-16-readonly-workspace",
+    "category": "Linux",
+    "title": "Read-Only Escape",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "Your home directory is read-only. A generator script 'generate.sh' writes the flag to a directory specified as its argument. Pass a writable folder like /tmp!",
+    "flag": "CTFQUEST{wr1t3_t0_tmp_wh3n_r0_h0m3}",
+    "hints": [
+      "When home is read-only, Linux provides temporary writable storage in '/tmp'.",
+      "Inspect 'generate.sh' to see what parameter it expects.",
+      "Run: ./generate.sh /tmp and then cat /tmp/flag.txt"
+    ],
+    "setup": "\ncat << 'EOF' > /home/player/generate.sh\n#!/bin/bash\nif [ -z \"$1\" ]; then\n  echo \"Usage: ./generate.sh <output_dir>\"\n  exit 1\nfi\necho \"FLAG_PLACEHOLDER\" > \"$1/flag.txt\"\necho \"Flag generated at $1/flag.txt\"\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /home/player/generate.sh\nchmod 755 /home/player/generate.sh\n"
+  },
+  {
+    "id": 17,
+    "slug": "linux-17-file-octal",
+    "category": "Linux",
+    "title": "File Mode Octal Permission",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "Inside 'vault/', there are 10 files. Exactly one file has octal permission 754 (rwxr-xr--). Find which file has permission 754 to obtain the flag.",
+    "flag": "CTFQUEST{0ct4l_p3rm1ss10n_754_st4t}",
+    "hints": [
+      "Octal permissions represent owner, group, and other rights.",
+      "The 'stat' command displays octal permissions using 'stat -c \"%a %n\" <files>'.",
+      "Or use 'find vault -perm 754'."
+    ],
+    "setup": "\nmkdir -p /home/player/vault\nfor i in $(seq 1 10); do\n  echo \"dummy file $i\" > \"/home/player/vault/file$i.txt\"\n  chmod 644 \"/home/player/vault/file$i.txt\"\ndone\necho \"$FLAG\" > /home/player/vault/file7.txt\nchmod 754 /home/player/vault/file7.txt\n"
+  },
+  {
+    "id": 18,
+    "slug": "linux-18-stderr-stdout",
+    "category": "Linux",
+    "title": "Standard Streams: Stderr vs Stdout",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "The program './noisy' spews thousands of error lines to stderr (descriptor 2) while printing the true flag to stdout (descriptor 1). Discard the errors!",
+    "flag": "CTFQUEST{r3d1r3ct_std3rr_t0_d3v_null}",
+    "hints": [
+      "In Linux, stdout is 1 and stderr is 2.",
+      "Redirecting stderr to '/dev/null' silences error output.",
+      "Try: ./noisy 2>/dev/null"
+    ],
+    "setup": "\ncat << 'EOF' > /home/player/noisy\n#!/bin/bash\nfor i in {1..2000}; do\n  echo \"DEBUG error message $i: warning discarded\" >&2\ndone\necho \"FLAG_PLACEHOLDER\"\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /home/player/noisy\nchmod 755 /home/player/noisy\n"
+  },
+  {
+    "id": 19,
+    "slug": "linux-19-cut-columns",
+    "category": "Linux",
+    "title": "Cut the Columns",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'users.csv' has comma-separated fields: id, username, email, pin, flag, status. Find the user 'alice' and extract the flag column using 'cut'.",
+    "flag": "CTFQUEST{cut_c0lumns_d3l1m1t3r_csv}",
+    "hints": [
+      "Use grep to isolate alice's line first.",
+      "The 'cut' command accepts a delimiter with '-d' and field number with '-f'.",
+      "Try: grep alice users.csv | cut -d',' -f5"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/users.csv', 'w') as f:\n    f.write('id,username,email,pin,flag,status\\n')\n    users = ['bob', 'carol', 'dave', 'alice', 'eve', 'frank']\n    for i, u in enumerate(users, 1):\n        fl = flag if u == 'alice' else 'NOPE'\n        f.write(f'{i},{u},{u}@corp.local,{1000+i},{fl},active\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/users.csv\n"
+  },
+  {
+    "id": 20,
+    "slug": "linux-20-sed-replace",
+    "category": "Linux",
+    "title": "Sed Stream Editor",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'stream.txt' contains config parameters. Exactly one line defines 'super_secret_override'. Use 'sed' to extract the secret value.",
+    "flag": "CTFQUEST{s3d_str34m_3d1t0r_p0w3r}",
+    "hints": [
+      "You can use sed to match and print specific patterns.",
+      "Or grep for super_secret_override.",
+      "Try: sed -n '/super_secret_override/p' stream.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/stream.txt', 'w') as f:\n    for i in range(1, 100):\n        f.write(f'config_param_{i}=standard_value\\n')\n    f.write(f'super_secret_override={flag}\\n')\n    for i in range(101, 200):\n        f.write(f'config_param_{i}=standard_value\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/stream.txt\n"
+  },
+  {
+    "id": 21,
+    "slug": "linux-21-awk-filter",
+    "category": "Linux",
+    "title": "Awk Field Filtering",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'scores.tsv' has tab-separated columns: Name, Subject, Score, Token. Find the row where Score is 100 and print the Token field using 'awk'.",
+    "flag": "CTFQUEST{4wk_f13ld_pr0c3ss1ng_g0d}",
+    "hints": [
+      "Awk can filter records by column condition: '$3 == 100'.",
+      "Print the 4th column using '{print $4}'.",
+      "Try: awk '$3 == 100 {print $4}' scores.tsv"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/scores.tsv', 'w') as f:\n    f.write('Name\\tSubject\\tScore\\tToken\\n')\n    f.write('Alex\\tMath\\t88\\tTOKEN_ALEX\\n')\n    f.write('Blake\\tPhysics\\t92\\tTOKEN_BLAKE\\n')\n    f.write(f'Cipher\\tCyber\\t100\\t{flag}\\n')\n    f.write('Dana\\tChemistry\\t76\\tTOKEN_DANA\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/scores.tsv\n"
+  },
+  {
+    "id": 22,
+    "slug": "linux-22-rot13-tr",
+    "category": "Linux",
+    "title": "ROT13 Character Translation",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "The file 'cipher.txt' is encoded with the classic ROT13 Caesar cipher. Use the 'tr' command to translate the characters back to plaintext.",
+    "flag": "CTFQUEST{r0t13_c43s4r_c1ph3r_d3c0d3d}",
+    "hints": [
+      "ROT13 shifts alphabetical characters by 13 positions.",
+      "The 'tr' command translates characters from set 1 to set 2.",
+      "Try: tr 'A-Za-z' 'N-ZA-Mn-za-m' < cipher.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys, codecs\nflag = sys.argv[1]\nrot = codecs.encode(flag, 'rot_13')\nwith open('/home/player/cipher.txt', 'w') as f:\n    f.write(rot + '\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/cipher.txt\n"
+  },
+  {
+    "id": 23,
+    "slug": "linux-23-tac-rev",
+    "category": "Linux",
+    "title": "Reverse Characters",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "'reversed.txt' contains the flag written completely backwards. Reverse the string back to normal.",
+    "flag": "CTFQUEST{r3v_str1ng_b4ckw4rds_c00l}",
+    "hints": [
+      "Linux provides the 'rev' utility to reverse lines character-by-character.",
+      "Pass the file to 'rev'.",
+      "Try: rev reversed.txt"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nwith open('/home/player/reversed.txt', 'w') as f:\n    f.write(flag[::-1] + '\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/reversed.txt\n"
+  },
+  {
+    "id": 24,
+    "slug": "linux-24-diff-compare",
+    "category": "Linux",
+    "title": "File Differences",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'config.orig' and 'config.new' are 150 lines long. One added line in 'config.new' contains the secret token. Find it using 'diff'.",
+    "flag": "CTFQUEST{d1ff_sp0ts_th3_d1ff3r3nc3}",
+    "hints": [
+      "Comparing large files line-by-line is best done with 'diff'.",
+      "Lines marked with '>' were added in the second file.",
+      "Try: diff config.orig config.new"
+    ],
+    "setup": "\npython3 -c \"\nimport sys\nflag = sys.argv[1]\nlines_orig = [f'setting_{i}=default_val_{i}' for i in range(1, 150)]\nlines_new = list(lines_orig)\nlines_new.insert(88, f'secret_token={flag}')\nwith open('/home/player/config.orig', 'w') as f:\n    f.write('\\n'.join(lines_orig) + '\\n')\nwith open('/home/player/config.new', 'w') as f:\n    f.write('\\n'.join(lines_new) + '\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/config.orig /home/player/config.new\n"
+  },
+  {
+    "id": 25,
+    "slug": "linux-25-tee-pipe",
+    "category": "Linux",
+    "title": "Tee Pipeline Inspector",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "The script './stream_gen.sh' emits stream packets. Use 'tee' or pipe to inspect the packets and find the flag line.",
+    "flag": "CTFQUEST{t33_br4nch_st4nd4rd_str34m}",
+    "hints": [
+      "Run './stream_gen.sh' and pipe its output to grep.",
+      "Or use 'tee' to save output to a file while viewing.",
+      "Try: ./stream_gen.sh | grep CTFQUEST"
+    ],
+    "setup": "\ncat << 'EOF' > /home/player/stream_gen.sh\n#!/bin/bash\nfor i in {1..20}; do\n  if [ $i -eq 13 ]; then\n    echo \"STREAM_DATA: FLAG_PLACEHOLDER\"\n  else\n    echo \"STREAM_DATA: dummy_packet_$i\"\n  fi\ndone\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /home/player/stream_gen.sh\nchmod 755 /home/player/stream_gen.sh\n"
+  },
+  {
+    "id": 26,
+    "slug": "linux-26-tar-extract",
+    "category": "Linux",
+    "title": "Tar Archive Extraction",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A tar archive 'archive.tar' contains 'flag.txt'. Extract it to /tmp and read the secret.",
+    "flag": "CTFQUEST{t4r_4rch1v3_3xtr4ct10n_34sy}",
+    "hints": [
+      "Tar archives bundle multiple files into one file.",
+      "Extract with 'tar -xf archive.tar -C /tmp'.",
+      "Read '/tmp/flag.txt'."
+    ],
+    "setup": "\nmkdir -p /tmp/pack_tar\necho \"$FLAG\" > /tmp/pack_tar/flag.txt\ntar -cf /home/player/archive.tar -C /tmp/pack_tar flag.txt\nrm -rf /tmp/pack_tar\nchmod 444 /home/player/archive.tar\n"
+  },
+  {
+    "id": 27,
+    "slug": "linux-27-gzip-decomp",
+    "category": "Linux",
+    "title": "Gzip Compressed Tarball",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "'backup.tar.gz' is compressed using gzip. Extract the archive to /tmp and claim the flag.",
+    "flag": "CTFQUEST{gz1p_c0mpr3ss10n_t4r_xzf}",
+    "hints": [
+      "The '-z' flag in tar enables gzip decompression.",
+      "Use 'tar -xzf backup.tar.gz -C /tmp'.",
+      "Read the extracted '/tmp/flag.txt'."
+    ],
+    "setup": "\nmkdir -p /tmp/pack_gz\necho \"$FLAG\" > /tmp/pack_gz/flag.txt\ntar -czf /home/player/backup.tar.gz -C /tmp/pack_gz flag.txt\nrm -rf /tmp/pack_gz\nchmod 444 /home/player/backup.tar.gz\n"
+  },
+  {
+    "id": 28,
+    "slug": "linux-28-bzip2-decomp",
+    "category": "Linux",
+    "title": "Bzip2 Compression",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'archive.tar.bz2' is compressed with bzip2. Decompress it into /tmp.",
+    "flag": "CTFQUEST{bz1p2_c0mpr3ss10n_t4r_xjf}",
+    "hints": [
+      "Bzip2 compressed archives use '-j' with tar.",
+      "Run 'tar -xjf archive.tar.bz2 -C /tmp'.",
+      "Read '/tmp/flag.txt'."
+    ],
+    "setup": "\nmkdir -p /tmp/pack_bz2\necho \"$FLAG\" > /tmp/pack_bz2/flag.txt\ntar -cjf /home/player/archive.tar.bz2 -C /tmp/pack_bz2 flag.txt\nrm -rf /tmp/pack_bz2\nchmod 444 /home/player/archive.tar.bz2\n"
+  },
+  {
+    "id": 29,
+    "slug": "linux-29-xz-decomp",
+    "category": "Linux",
+    "title": "XZ Compression",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'package.tar.xz' uses high-ratio XZ compression. Extract the archive.",
+    "flag": "CTFQUEST{xz_extr3m3_c0mpr3ss10n}",
+    "hints": [
+      "The '-J' option in tar handles .xz compression.",
+      "Run 'tar -xJf package.tar.xz -C /tmp'.",
+      "Read '/tmp/flag.txt'."
+    ],
+    "setup": "\nmkdir -p /tmp/pack_xz\necho \"$FLAG\" > /tmp/pack_xz/flag.txt\ntar -cJf /home/player/package.tar.xz -C /tmp/pack_xz flag.txt\nrm -rf /tmp/pack_xz\nchmod 444 /home/player/package.tar.xz\n"
+  },
+  {
+    "id": 30,
+    "slug": "linux-30-base64-decode",
+    "category": "Linux",
+    "title": "Base64 Decoding",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "'encoded.b64' contains a base64 encoded flag string. Decode it to readable text.",
+    "flag": "CTFQUEST{b4s364_d3c0d1ng_1s_34sy}",
+    "hints": [
+      "Base64 is a binary-to-text encoding scheme.",
+      "Use the 'base64 -d' command to decode.",
+      "Try: base64 -d encoded.b64"
+    ],
+    "setup": "\necho -n \"$FLAG\" | base64 > /home/player/encoded.b64\nchmod 444 /home/player/encoded.b64\n"
+  },
+  {
+    "id": 31,
+    "slug": "linux-31-hexdump-decode",
+    "category": "Linux",
+    "title": "Hex Dump to Plaintext",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'dump.hex' contains raw hexadecimal byte values representing the secret. Reconstruct the plaintext ASCII flag.",
+    "flag": "CTFQUEST{xxd_h3xdump_r3v3rs3_pl41n}",
+    "hints": [
+      "Hex values represent character ASCII codes (e.g., 43=C, 54=T, 46=F).",
+      "The 'xxd' utility has a reverse mode '-r -p'.",
+      "Try: xxd -r -p dump.hex"
+    ],
+    "setup": "\necho -n \"$FLAG\" | xxd -p > /home/player/dump.hex\nchmod 444 /home/player/dump.hex\n"
+  },
+  {
+    "id": 32,
+    "slug": "linux-32-nested-matryoshka",
+    "category": "Linux",
+    "title": "Matryoshka Archive",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "'russian_doll' is compressed in multiple layers: bzip2, gzip, and base64! Peel each layer in /tmp to find the flag.",
+    "flag": "CTFQUEST{m4try0shk4_n3st3d_4rch1v3s}",
+    "hints": [
+      "Use the 'file' command at each stage to inspect what type of archive you have.",
+      "Unpack in /tmp: bzcat russian_doll | zcat | base64 -d",
+      "Or decode step by step: bunzip2, gunzip, and base64 -d."
+    ],
+    "setup": "\npython3 -c \"\nimport sys, gzip, bz2, base64\nflag = sys.argv[1].encode()\nb64 = base64.b64encode(flag)\ngz = gzip.compress(b64)\nbz = bz2.compress(gz)\nwith open('/home/player/russian_doll', 'wb') as f:\n    f.write(bz)\n\" \"$FLAG\"\nchmod 444 /home/player/russian_doll\n"
+  },
+  {
+    "id": 33,
+    "slug": "linux-33-ps-process",
+    "category": "Linux",
+    "title": "Process Arguments Leak",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A daemon process 'vault-worker' is currently running in the background. Inspect the system process list and command arguments to find the secret token.",
+    "flag": "CTFQUEST{pr0c3ss_4rgum3nts_ps_4ux}",
+    "hints": [
+      "Processes and their command-line arguments are visible in the process table.",
+      "Use 'ps aux' or 'ps -ef' to view all running processes.",
+      "Look for the arguments passed to 'vault-worker'."
+    ],
+    "setup": "\ncat << 'EOF' > /usr/local/bin/vault-worker\n#!/bin/bash\nwhile true; do sleep 3600; done\nEOF\nchmod 755 /usr/local/bin/vault-worker\n"
+  },
+  {
+    "id": 34,
+    "slug": "linux-34-cron-inspector",
+    "category": "Linux",
+    "title": "Cron Job Inspector",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A scheduled background task runs periodically on this machine. Inspect the cron configuration files in /etc/cron* to uncover the secret.",
+    "flag": "CTFQUEST{cr0n_j0b_sch3dul3r_l34k}",
+    "hints": [
+      "Scheduled jobs are stored in '/etc/cron.d/', '/etc/crontab', or '/var/spool/cron'.",
+      "Check the contents of files inside '/etc/cron.d/'.",
+      "Try: cat /etc/cron.d/sync-job"
+    ],
+    "setup": "\nmkdir -p /etc/cron.d\necho \"* * * * * root /usr/local/bin/backup-sync --secret=$FLAG\" > /etc/cron.d/sync-job\nchmod 644 /etc/cron.d/sync-job\n"
+  },
+  {
+    "id": 35,
+    "slug": "linux-35-netcat-port",
+    "category": "Linux",
+    "title": "Local Port Listener",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "A server service is listening locally on port 9999 (127.0.0.1:9999). Connect to it using Netcat (nc) to retrieve the flag banner.",
+    "flag": "CTFQUEST{n3tc4t_l0c4l_p0rt_c0nn3ct}",
+    "hints": [
+      "Check listening ports with 'ss -tulpn' or 'netstat'.",
+      "Connect using netcat: 'nc 127.0.0.1 9999'.",
+      "The banner will print the flag immediately upon connection."
+    ],
+    "setup": "\ncat << 'EOF' > /usr/local/bin/port-server.py\nimport socket, sys\nflag = sys.argv[1]\ns = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\ns.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)\ns.bind(('127.0.0.1', 9999))\ns.listen(10)\nwhile True:\n    try:\n        conn, addr = s.accept()\n        conn.sendall(f\"CTFQuest Vault Service v1.0\\nFlag: {flag}\\n\".encode())\n        conn.close()\n    except Exception:\n        pass\nEOF\nchmod 755 /usr/local/bin/port-server.py\n"
+  },
+  {
+    "id": 36,
+    "slug": "linux-36-unix-socket",
+    "category": "Linux",
+    "title": "UNIX Domain Socket",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "A local daemon is listening on a UNIX domain socket at '/tmp/service.sock'. Connect to it using Netcat with the '-U' option.",
+    "flag": "CTFQUEST{un1x_d0m41n_s0ck3t_nc_u}",
+    "hints": [
+      "UNIX domain sockets are inter-process communication endpoints represented as files.",
+      "Netcat supports UNIX sockets using the '-U' flag.",
+      "Try: nc -U /tmp/service.sock"
+    ],
+    "setup": "\ncat << 'EOF' > /usr/local/bin/socket-server.py\nimport socket, sys, os\nflag = sys.argv[1]\nsock_path = '/tmp/service.sock'\nif os.path.exists(sock_path): os.remove(sock_path)\ns = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\ns.bind(sock_path)\nos.chmod(sock_path, 0o777)\ns.listen(10)\nwhile True:\n    try:\n        conn, _ = s.accept()\n        conn.sendall(f\"Socket authorized. Key: {flag}\\n\".encode())\n        conn.close()\n    except Exception:\n        pass\nEOF\nchmod 755 /usr/local/bin/socket-server.py\n"
+  },
+  {
+    "id": 37,
+    "slug": "linux-37-signal-handler",
+    "category": "Linux",
+    "title": "Process Signal Handler",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "A process named 'signal-listener' is running. When it receives the SIGUSR1 signal, it dumps the secret flag to '/tmp/flag.txt'. Send the signal!",
+    "flag": "CTFQUEST{s1gn4l_h4ndl3r_s1gusr1_k1ll}",
+    "hints": [
+      "Find the process PID using 'pgrep signal-listener' or 'ps aux'.",
+      "Send user-defined signal 1 using 'kill -SIGUSR1 <PID>' or 'pkill -USR1 signal-listener'.",
+      "After sending the signal, check 'cat /tmp/flag.txt'."
+    ],
+    "setup": "\ncat << 'EOF' > /usr/local/bin/signal-listener.py\nimport signal, time, sys\nflag = sys.argv[1]\ndef handler(sig, frame):\n    with open('/tmp/flag.txt', 'w') as f:\n        f.write(flag + '\n')\nsignal.signal(signal.SIGUSR1, handler)\nwhile True: time.sleep(1)\nEOF\nchmod 755 /usr/local/bin/signal-listener.py\n"
+  },
+  {
+    "id": 38,
+    "slug": "linux-38-proc-fd-leak",
+    "category": "Linux",
+    "title": "Recover Deleted File from /proc",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "Process 'leak-daemon' opened the flag file and then unlinked (deleted) it from disk. As long as the process holds it open, you can recover it from /proc/<PID>/fd/!",
+    "flag": "CTFQUEST{pr0c_fd_f1l3_d3scr1pt0r_r3c0v3r}",
+    "hints": [
+      "In Linux, unlinked files with open file descriptors remain accessible in /proc.",
+      "Find the PID with 'pgrep leak-daemon' or 'ps aux | grep leak-daemon'.",
+      "List '/proc/<PID>/fd/' and cat the descriptor pointing to the deleted file."
+    ],
+    "setup": "\ncat << 'EOF' > /usr/local/bin/leak-daemon.py\nimport os, time, sys\nflag = sys.argv[1]\nf = open('/tmp/.unlinked_secret', 'w')\nf.write(flag + '\n')\nf.flush()\nf_read = open('/tmp/.unlinked_secret', 'r')\nos.unlink('/tmp/.unlinked_secret')\nwhile True: time.sleep(10)\nEOF\nchmod 755 /usr/local/bin/leak-daemon.py\n"
+  },
+  {
+    "id": 39,
+    "slug": "linux-39-strings-binary",
+    "category": "Linux",
+    "title": "Strings in Compiled Binary",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'mystery_binary' is a compiled ELF executable. The developer left an unencrypted secret string in the binary. Extract printable strings with 'strings'.",
+    "flag": "CTFQUEST{str1ngs_3xtr4ct_pr1nt4bl3_3lf}",
+    "hints": [
+      "The 'strings' command prints all sequences of printable characters in a binary file.",
+      "Combine it with grep to find the CTFQUEST flag format.",
+      "Try: strings mystery_binary | grep CTFQUEST"
+    ],
+    "setup": "\ncat << 'EOF' > /tmp/binary.c\n#include <stdio.h>\nconst char *secret = \"FLAG_PLACEHOLDER\";\nint main() {\n    printf(\"Access denied.\\n\");\n    return 1;\n}\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /tmp/binary.c\ngcc /tmp/binary.c -o /home/player/mystery_binary\nrm -f /tmp/binary.c\nchmod 755 /home/player/mystery_binary\n"
+  },
+  {
+    "id": 40,
+    "slug": "linux-40-file-magic",
+    "category": "Linux",
+    "title": "Disguised File Type",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'image.png' is not actually a PNG image! Inspect its magic bytes using the 'file' command to discover what it really is, then extract its contents.",
+    "flag": "CTFQUEST{f1l3_m4g1c_byt3s_d3t3ct10n}",
+    "hints": [
+      "File extensions in Linux are just names; the 'file' command examines header magic bytes.",
+      "Run 'file image.png' to see its true format.",
+      "If it is a zip archive, extract it to /tmp: unzip image.png -d /tmp"
+    ],
+    "setup": "\npython3 -c \"\nimport sys, zipfile\nflag = sys.argv[1]\nwith zipfile.ZipFile('/home/player/image.png', 'w') as z:\n    z.writestr('flag.txt', flag + '\\n')\n\" \"$FLAG\"\nchmod 444 /home/player/image.png\n"
+  },
+  {
+    "id": 41,
+    "slug": "linux-41-checksum-match",
+    "category": "Linux",
+    "title": "SHA-256 Checksum Matcher",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "In 'hashes/', there are 30 files. 'TARGET_HASH.txt' specifies an exact SHA-256 hash. Find the file whose checksum matches and read the flag.",
+    "flag": "CTFQUEST{sh4256sum_v4l1d4t10n_m4st3r}",
+    "hints": [
+      "You can compute checksums for all files using 'sha256sum hashes/*'.",
+      "Read 'TARGET_HASH.txt' to get the target hash.",
+      "Filter the checksum list using grep with the target hash."
+    ],
+    "setup": "\nmkdir -p /home/player/hashes\npython3 -c \"\nimport sys, hashlib\nflag = sys.argv[1]\nfor i in range(1, 31):\n    content = f'dummy file content {i*97}\\n'\n    with open(f'/home/player/hashes/file_{i:02d}.dat', 'w') as f:\n        f.write(content)\nwith open('/home/player/hashes/file_19.dat', 'w') as f:\n    f.write(flag + '\\n')\ntarget_hash = hashlib.sha256((flag + '\\n').encode()).hexdigest()\nwith open('/home/player/TARGET_HASH.txt', 'w') as f:\n    f.write(f'Target SHA256: {target_hash}\\n')\n\" \"$FLAG\"\nchmod -R 444 /home/player/hashes /home/player/TARGET_HASH.txt\n"
+  },
+  {
+    "id": 42,
+    "slug": "linux-42-python-script",
+    "category": "Linux",
+    "title": "Python Scripting Decryption",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "A python script 'decryptor.py' implements XOR stream decryption. Run it or inspect the code to decrypt the secret message.",
+    "flag": "CTFQUEST{pyth0n3_scr1pt1ng_d3crypt0r}",
+    "hints": [
+      "You can execute python scripts directly using 'python3 <script>'.",
+      "Run 'python3 decryptor.py'.",
+      "The decrypted flag will print to standard output."
+    ],
+    "setup": "\ncat << 'EOF' > /home/player/decryptor.py\n# XOR decryption script\nencrypted = \"ENCRYPTED_HEX\"\nkey = 0x5a\nplain = bytes([b ^ key for b in bytes.fromhex(encrypted)]).decode()\nprint(\"Flag:\", plain)\nEOF\npython3 -c \"\nimport sys\nflag = sys.argv[1].encode()\nkey = 0x5a\nenc_hex = bytes([b ^ key for b in flag]).hex()\nwith open('/home/player/decryptor.py', 'r') as f:\n    code = f.read()\ncode = code.replace('ENCRYPTED_HEX', enc_hex)\nwith open('/home/player/decryptor.py', 'w') as f:\n    f.write(code)\n\" \"$FLAG\"\nchmod 755 /home/player/decryptor.py\n"
+  },
+  {
+    "id": 43,
+    "slug": "git-43-branch-detective",
+    "category": "Git",
+    "title": "Git: Branch Detective",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "The git repository inside 'repo/' has multiple branches. The 'main' branch looks empty. List all branches and checkout the secret feature branch.",
+    "flag": "CTFQUEST{g1t_br4nch_sw1tch_ch3ck0ut}",
+    "hints": [
+      "List all branches using 'git branch -a'.",
+      "Switch to the secret branch using 'git checkout secret-feature'.",
+      "Read 'flag.txt' on that branch."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"Project README\" > README.md\ngit add README.md && git commit -m \"Initial commit\"\ngit checkout -b secret-feature\necho \"$FLAG\" > flag.txt\ngit add flag.txt && git commit -m \"Add secret credentials\"\ngit checkout main\n"
+  },
+  {
+    "id": 44,
+    "slug": "git-44-commit-archaeology",
+    "category": "Git",
+    "title": "Git: Commit Archaeology",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "Someone accidentally committed an API secret in 'repo/', then created a new commit deleting the file. Dig into the commit history with 'git log -p'!",
+    "flag": "CTFQUEST{g1t_c0mm1t_l0g_p_h1st0ry}",
+    "hints": [
+      "Deleting a file in git only removes it from HEAD; the history retains all versions.",
+      "Use 'git log -p' to view commit diffs and historical changes.",
+      "Look for the commit that added 'secret_key.txt'."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"Initial code\" > app.py\ngit add app.py && git commit -m \"Initial release\"\necho \"API_KEY=$FLAG\" > secret_key.txt\ngit add secret_key.txt && git commit -m \"Accidentally added API key\"\nrm secret_key.txt\ngit add secret_key.txt && git commit -m \"Remove sensitive key\"\n"
+  },
+  {
+    "id": 45,
+    "slug": "git-45-stashed-away",
+    "category": "Git",
+    "title": "Git: Stashed Away",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "A developer was working on a feature when they stashed their changes before switching branches. Recover the stash in 'repo/'.",
+    "flag": "CTFQUEST{g1t_st4sh_p0p_s4v3d_w0rk}",
+    "hints": [
+      "Git stash saves uncommitted work out of the working tree.",
+      "List stashes using 'git stash list'.",
+      "Restore stashed files using 'git stash apply' or 'git stash pop'."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"Production code\" > main.py\ngit add main.py && git commit -m \"Base system\"\necho \"$FLAG\" > secret.txt\ngit add secret.txt\ngit stash push -m \"WIP: security token\"\n"
+  },
+  {
+    "id": 46,
+    "slug": "git-46-reflog-recovery",
+    "category": "Git",
+    "title": "Git: Reflog Recovery",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "A commit containing the flag was deleted with 'git reset --hard HEAD~1'. The commit is no longer in normal log, but Git's reflog remembers it! Recover the lost commit.",
+    "flag": "CTFQUEST{g1t_r3fl0g_0rph4n_c0mm1t}",
+    "hints": [
+      "'git log' only walks reachable commits, but 'git reflog' tracks every HEAD movement.",
+      "Run 'git reflog' in 'repo/' to find the SHA of the reset commit.",
+      "Use 'git show <commit_hash>' to inspect the lost commit."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"Stable version\" > version.txt\ngit add version.txt && git commit -m \"v1.0\"\necho \"$FLAG\" > secret_token.txt\ngit add secret_token.txt && git commit -m \"Commit with secret\"\ngit reset --hard HEAD~1\n"
+  },
+  {
+    "id": 47,
+    "slug": "git-47-tagged-release",
+    "category": "Git",
+    "title": "Git: Tagged Release Notes",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A secret token was stored in an annotated Git release tag. Inspect all git tags and their annotations in 'repo/'.",
+    "flag": "CTFQUEST{g1t_4nn0t4t3d_t4g_n0t3s}",
+    "hints": [
+      "List all tags with 'git tag'.",
+      "View tag messages with 'git tag -n' or 'git show v1.0.0'.",
+      "The tag annotation message contains the flag."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"Release 1.0\" > release.notes\ngit add release.notes && git commit -m \"Release prep\"\ngit tag -a v1.0.0 -m \"Release v1.0.0 key=$FLAG\"\n"
+  },
+  {
+    "id": 48,
+    "slug": "git-48-merge-conflict",
+    "category": "Git",
+    "title": "Git: Branch Merge Conflict",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "Two branches in 'repo/' edited the same line. Merge the 'feature' branch into 'main' and read the conflict markers to uncover the secret.",
+    "flag": "CTFQUEST{g1t_m3rg3_c0nfl1ct_m4rk3rs}",
+    "hints": [
+      "Run 'git merge feature' inside 'repo/'.",
+      "Git will pause with a merge conflict in 'note.txt'.",
+      "Inspect 'note.txt' to view the conflicting content containing the flag."
+    ],
+    "setup": "\nmkdir -p /home/player/repo\ncd /home/player/repo\ngit init -b main\ngit config user.email \"player@ctfquest.local\"\ngit config user.name \"CTF Player\"\necho \"line 1\" > note.txt\ngit add note.txt && git commit -m \"c1\"\ngit checkout -b feature\necho \"feature: $FLAG\" > note.txt\ngit commit -am \"feature edit\"\ngit checkout main\necho \"main: standard text\" > note.txt\ngit commit -am \"main edit\"\n"
+  },
+  {
+    "id": 49,
+    "slug": "docker-49-dockerfile-analysis",
+    "category": "Docker",
+    "title": "Docker: Dockerfile Forensics",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "An insecure build pattern leaked sensitive credentials into the build arguments in 'app/Dockerfile'. Analyze the file to recover the leaked secret.",
+    "flag": "CTFQUEST{d0ck3rf1l3_bu1ld_4rg_l34k}",
+    "hints": [
+      "Docker build arguments (ARG) are often mistakenly used for passwords.",
+      "Read 'app/Dockerfile'.",
+      "Look for SECRET_FLAG in the ARG instruction."
+    ],
+    "setup": "\nmkdir -p /home/player/app\ncat << 'EOF' > /home/player/app/Dockerfile\nFROM alpine:3.19\nARG SECRET_FLAG=\"FLAG_PLACEHOLDER\"\nENV APP_ENV=production\nRUN echo \"Building production image with secret: $SECRET_FLAG\" > /build.log\nCMD [\"echo\", \"running\"]\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /home/player/app/Dockerfile\nchmod 444 /home/player/app/Dockerfile\n"
+  },
+  {
+    "id": 50,
+    "slug": "docker-50-container-spec",
+    "category": "Docker",
+    "title": "Docker: Container Spec Parsing",
+    "difficulty": "medium",
+    "xp": 75,
+    "description": "'pod-spec.json' contains a Kubernetes / Docker pod definition. Use 'jq' or Python to parse the JSON and extract the value of 'VAULT_MASTER_KEY'.",
+    "flag": "CTFQUEST{c0nt41n3r_sp3c_jq_p4rs1ng}",
+    "hints": [
+      "Use 'jq' to parse JSON files in the command line.",
+      "Query the env array: jq '.spec.containers[0].env' pod-spec.json.",
+      "Or grep for 'VAULT_MASTER_KEY' inside 'pod-spec.json'."
+    ],
+    "setup": "\npython3 -c \"\nimport sys, json\nflag = sys.argv[1]\nspec = {\n    'apiVersion': 'v1',\n    'kind': 'Pod',\n    'metadata': {'name': 'secure-vault-service'},\n    'spec': {\n        'containers': [{\n            'name': 'vault-app',\n            'image': 'vault:1.15.2',\n            'env': [\n                {'name': 'PORT', 'value': '8200'},\n                {'name': 'VAULT_MASTER_KEY', 'value': flag}\n            ]\n        }]\n    }\n}\nwith open('/home/player/pod-spec.json', 'w') as f:\n    json.dump(spec, f, indent=2)\n\" \"$FLAG\"\nchmod 444 /home/player/pod-spec.json\n"
+  },
+  {
+    "id": 51,
+    "slug": "docker-51-compose-inspection",
+    "category": "Docker",
+    "title": "Docker: Compose Environment Secrets",
+    "difficulty": "easy",
+    "xp": 50,
+    "description": "A multi-container application is configured in 'stack/docker-compose.yml'. Inspect the database environment configurations to find the hardcoded secret password.",
+    "flag": "CTFQUEST{d0ck3r_c0mp0s3_s3cr3ts_f0und}",
+    "hints": [
+      "Docker Compose files define service environments in YAML format.",
+      "Read 'stack/docker-compose.yml'.",
+      "Check POSTGRES_PASSWORD under the db service."
+    ],
+    "setup": "\nmkdir -p /home/player/stack\ncat << 'EOF' > /home/player/stack/docker-compose.yml\nversion: '3.8'\nservices:\n  web:\n    image: nginx:alpine\n    ports:\n      - \"80:80\"\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_USER: admin\n      POSTGRES_PASSWORD: \"FLAG_PLACEHOLDER\"\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /home/player/stack/docker-compose.yml\nchmod 444 /home/player/stack/docker-compose.yml\n"
+  },
+  {
+    "id": 52,
+    "slug": "linux-52-grand-finale",
+    "category": "Linux",
+    "title": "Master of the Shell (Grand Finale)",
+    "difficulty": "hard",
+    "xp": 100,
+    "description": "The final test! A password-protected zip file 'championship.zip' contains the winning script. Decode the password from '.champion_creds', extract the zip in /tmp, and execute the winner script!",
+    "flag": "CTFQUEST{ult1m4t3_sh3ll_m4st3r_c0nqu3r0r}",
+    "hints": [
+      "Check the hidden file '.champion_creds' in your home directory.",
+      "Decode the base64 password string: echo '<string>' | base64 -d.",
+      "Unzip with password: unzip -P <password> championship.zip -d /tmp, then run /tmp/win.sh!"
+    ],
+    "setup": "\ncat << 'EOF' > /tmp/win.sh\n#!/bin/bash\necho \"CONGRATULATIONS CHAMPION!\"\necho \"FLAG: FLAG_PLACEHOLDER\"\nEOF\nsed -i \"s|FLAG_PLACEHOLDER|$FLAG|g\" /tmp/win.sh\nchmod 755 /tmp/win.sh\n\npython3 -c \"\nimport zipfile, base64\nwith zipfile.ZipFile('/home/player/championship.zip', 'w') as z:\n    z.write('/tmp/win.sh', 'win.sh')\nwith open('/home/player/.champion_creds', 'w') as f:\n    f.write('ARCHIVE_KEY_B64=' + base64.b64encode(b'master_shell_key').decode() + '\\n')\n\"\nrm -f /tmp/win.sh\nchmod 444 /home/player/championship.zip /home/player/.champion_creds\n"
+  }
+]
